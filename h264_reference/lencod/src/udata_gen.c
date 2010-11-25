@@ -15,7 +15,6 @@ static const int max_msg_size                    = MAXNALUSIZE - 1024; /* Lets g
 #define MAX_TEMPLATE_MSG_SIZE 512
 static char random_message_start_buffer[MAX_TEMPLATE_MSG_SIZE];
 static char random_message_end_buffer[MAX_TEMPLATE_MSG_SIZE]; 
-static char message_buffer[MAXNALUSIZE];     /* Cant be bigger than this */
 
 /*!
  *************************************************************************************
@@ -111,12 +110,44 @@ NALU_t *user_data_generate_unregistered_sei_nalu_from_msg(char * msg)
 
 char* user_data_generate_create_random_message()
 {
-    char * msg_body = 0;
+    char * msg    = 0;
+    int msg_size  = 0;
+    int body_size = 0;
+    int start_len = 0;
+    int end_len   = 0;
+    int i         = 0;
+
     snprintf (random_message_start_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_start_template, random_msg_counter);
     snprintf (random_message_end_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_end_template, random_msg_counter);
     random_msg_counter++;
 
-    //rand(void); 
+    start_len = strlen(random_message_start_buffer);
+    end_len  = strlen(random_message_end_buffer);
+
+    body_size = rand() % (max_msg_size - (start_len + end_len));
+    
+    if (body_size == 0) {
+        /* bad luck */
+        body_size = 512;
+    }
+
+    msg_size = body_size + start_len +  end_len + 1;
+    msg      = malloc(msg_size);
+
+    /* writing the start */
+    memcpy(msg, random_message_start_buffer, start_len);
+    
+    /* writing the body */
+    for (i = start_len; i < msg_size - end_len; i++) {
+        msg[i] = (char) i; /* whatever */
+    }
+
+    /* writing the end */
+    memcpy(msg + start_len + body_size, random_message_end_buffer, end_len);
+
+    /* 0 terminate it */
+    msg[msg_size - 1] = '\0';
+    return msg;
 }
 
 void user_data_generate_destroy_random_message(char * msg)
