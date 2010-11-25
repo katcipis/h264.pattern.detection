@@ -1,8 +1,21 @@
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "udata_gen.h"
 #include "vlc.h"
 #include "sei.h"
 #include "nalu.h"
 
+
+static const char* random_message_start_template = "\nRandom message[%d] start\n";
+static const char* random_message_end_template   = "\nRandom message[%d] end!\n";
+static int random_msg_counter                    = 1;
+static const int max_msg_size                    = MAXNALUSIZE - 1024; /* Lets guarantee that this + headers dont exceed the MAXNALUSIZE */
+
+#define MAX_TEMPLATE_MSG_SIZE 512
+static char random_message_start_buffer[MAX_TEMPLATE_MSG_SIZE];
+static char random_message_end_buffer[MAX_TEMPLATE_MSG_SIZE]; 
+static char message_buffer[MAXNALUSIZE];     /* Cant be bigger than this */
 
 /*!
  *************************************************************************************
@@ -14,11 +27,12 @@
  *
  *************************************************************************************
  */
-static int GenerateUserDataSEImessage_rbsp (int id, byte *rbsp, char* sei_message, unsigned int message_size)
+static int GenerateUserDataSEImessage_rbsp (int id, byte *rbsp, char* sei_message, unsigned int sei_message_size)
 {
   Bitstream *bitstream;
+  unsigned int message_size = sei_message_size;
 
-  int len = 0, LenInBytes;
+  int LenInBytes;
   assert (rbsp != NULL);
 
   if ((bitstream=calloc(1, sizeof(Bitstream)))==NULL)
@@ -35,27 +49,28 @@ static int GenerateUserDataSEImessage_rbsp (int id, byte *rbsp, char* sei_messag
     TIME_T start_time;
     gettime(&start_time);    // start time
 
-    len+=u_v (8,"SEI: last_payload_type_byte", 5, bitstream);
+    u_v (8,"SEI: last_payload_type_byte", 5, bitstream);
     message_size += 17;
     while (message_size > 254)
     {
-      len+=u_v (8,"SEI: ff_byte",255, bitstream);
+      u_v (8,"SEI: ff_byte",255, bitstream);
       message_size -= 255;
     }
-    len+=u_v (8,"SEI: last_payload_size_byte",message_size, bitstream);
+    u_v (8,"SEI: last_payload_size_byte",message_size, bitstream);
 
     // Lets randomize uuid based on time
-    len+=u_v (32,"SEI: uuid_iso_iec_11578",(int) start_time.tv_sec, bitstream);
-    len+=u_v (32,"SEI: uuid_iso_iec_11578",(int) start_time.tv_usec, bitstream);
+    u_v (32,"SEI: uuid_iso_iec_11578",(int) start_time.tv_sec, bitstream);
+    u_v (32,"SEI: uuid_iso_iec_11578",(int) start_time.tv_usec, bitstream);
 
-    len+=u_v (32,"SEI: uuid_iso_iec_11578",(int) (uuid_message[0] << 24) + (uuid_message[1] << 16)  + (uuid_message[2] << 8) + (uuid_message[3] << 0), bitstream);
-    len+=u_v (32,"SEI: uuid_iso_iec_11578",(int) (uuid_message[4] << 24) + (uuid_message[5] << 16)  + (uuid_message[6] << 8) + (uuid_message[7] << 0), bitstream);
+    u_v (32,"SEI: uuid_iso_iec_11578",(int) (uuid_message[0] << 24) + (uuid_message[1] << 16)  + (uuid_message[2] << 8) + (uuid_message[3] << 0), bitstream);
+    u_v (32,"SEI: uuid_iso_iec_11578",(int) (uuid_message[4] << 24) + (uuid_message[5] << 16)  + (uuid_message[6] << 8) + (uuid_message[7] << 0), bitstream);
 
-    for (i = 0; i < strlen(sei_message); i++) {
-        len+=u_v (8,"SEI: user_data_payload_byte",sei_message[i], bitstream);
+    for (i = 0; i < sei_message_size; i++) {
+        u_v (8,"SEI: user_data_payload_byte",sei_message[i], bitstream);
     }
 
-    len+=u_v (8,"SEI: user_data_payload_byte", 0, bitstream);
+    /* FIXME we MUST have this zero or the original coded was suposed to zero terminate the msg ? */
+    u_v (8,"SEI: user_data_payload_byte", 0, bitstream);
   }
 
   SODBtoRBSP(bitstream);     // copies the last couple of bits into the byte buffer
@@ -80,13 +95,31 @@ NALU_t * user_data_generate_unregistered_sei_nalu(char * data, unsigned int size
 {
   NALU_t *n = AllocNALU(MAXNALUSIZE);
   int RBSPlen = 0;
-  int NALUlen;
   byte rbsp[MAXRBSPSIZE];
 
   RBSPlen = GenerateUserDataSEImessage_rbsp (NORMAL_SEI, rbsp, data, size);
-  NALUlen = RBSPtoNALU (rbsp, n, RBSPlen, NALU_TYPE_SEI, NALU_PRIORITY_DISPOSABLE, 1);
+  RBSPtoNALU (rbsp, n, RBSPlen, NALU_TYPE_SEI, NALU_PRIORITY_DISPOSABLE, 1);
 
   n->startcodeprefix_len = 4;
   return n;
 }
 
+NALU_t *user_data_generate_unregistered_sei_nalu_from_msg(char * msg)
+{
+    return user_data_generate_unregistered_sei_nalu(msg, strlen(msg));
+}
+
+char* user_data_generate_create_random_message()
+{
+    char * msg_body = 0;
+    snprintf (random_message_start_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_start_template, random_msg_counter);
+    snprintf (random_message_end_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_end_template, random_msg_counter);
+    random_msg_counter++;
+
+    //rand(void); 
+}
+
+void user_data_generate_destroy_random_message(char * msg)
+{
+    free(msg);
+}

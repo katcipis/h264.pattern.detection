@@ -135,10 +135,14 @@ int start_sequence(VideoParameters *p_Vid, InputParameters *p_Inp)
   }
 
   /* FIXME REMOVE THIS, ONLY TO TEST THE CUSTOM FUNCTION - KATCIPIS*/
-  nalu = NULL;
-  nalu = user_data_generate_unregistered_sei_nalu("USERDATA KATCIPIS", 17);
-  len += p_Vid->WriteNALU (p_Vid, nalu);
-  FreeNALU (nalu);
+  for (i = 0; i < 1000; i++) {
+      nalu = NULL;
+      char * msg = user_data_generate_create_random_message();
+      nalu = user_data_generate_unregistered_sei_nalu_from_msg(msg);
+      len += p_Vid->WriteNALU (p_Vid, nalu);
+      FreeNALU (nalu);
+      user_data_generate_destroy_random_message(msg);
+  }
   /* FIXME REMOVE THIS, ONLY TO TEST THE CUSTOM FUNCTION - KATCIPIS*/
 
 
