@@ -134,7 +134,7 @@ int start_sequence(VideoParameters *p_Vid, InputParameters *p_Inp)
     FreeNALU (nalu);
   }
 
-  /* FIXME REMOVE THIS, ONLY TO TEST THE CUSTOM FUNCTION - KATCIPIS*/
+  /* Lets send 1000 SEI NALUs containing a SEI Userdata Unregistered message */
   for (i = 0; i < 1000; i++) {
       nalu = NULL;
       char * msg = user_data_generate_create_random_message();
@@ -143,7 +143,6 @@ int start_sequence(VideoParameters *p_Vid, InputParameters *p_Inp)
       FreeNALU (nalu);
       user_data_generate_destroy_random_message(msg);
   }
-  /* FIXME REMOVE THIS, ONLY TO TEST THE CUSTOM FUNCTION - KATCIPIS*/
 
 
   p_Vid->p_Stats->bit_ctr_parametersets_n = len;

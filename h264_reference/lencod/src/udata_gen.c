@@ -10,7 +10,11 @@
 static const char* random_message_start_template = "\nRandom message[%d] start\n";
 static const char* random_message_end_template   = "\nRandom message[%d] end!\n";
 static int msg_counter                           = 1;
-static const int max_msg_size                    = MAXNALUSIZE - 1024; /* Lets guarantee that this + headers dont exceed the MAXNALUSIZE */
+
+/* Lets guarantee that max_msg_size + headers + 
+   emulation prevention bytes dont exceed the MAXNALUSIZE */
+static const int max_msg_size                    = MAXNALUSIZE - 1024; 
+
 static int growth_rate                           = 1024;
 static int actual_size                           = 1024;
 
@@ -105,11 +109,33 @@ NALU_t * user_data_generate_unregistered_sei_nalu(char * data, unsigned int size
   return n;
 }
 
+
+/*!
+ *************************************************************************************
+ * \brief
+ *    Function body for Unregistered userdata SEI message NALU generation
+ *
+ * \return
+ *    A NALU containing the SEI message.
+ *
+ *************************************************************************************
+ */
 NALU_t *user_data_generate_unregistered_sei_nalu_from_msg(char * msg)
 {
     return user_data_generate_unregistered_sei_nalu(msg, strlen(msg));
 }
 
+
+/*!
+ *************************************************************************************
+ * \brief
+ *    Function body for random string message generation.
+ *
+ * \return
+ *    A 0 terminted string.
+ *
+ *************************************************************************************
+ */
 char* user_data_generate_create_random_message()
 {
     char * msg    = 0;
@@ -119,6 +145,7 @@ char* user_data_generate_create_random_message()
     int end_len   = 0;
     int i         = 0;
 
+    /* This will help debug of the SEI messages at the decoder */
     snprintf (random_message_start_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_start_template, msg_counter);
     snprintf (random_message_end_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_end_template, msg_counter);
     msg_counter++;
@@ -152,6 +179,12 @@ char* user_data_generate_create_random_message()
     return msg;
 }
 
+/*!
+ *************************************************************************************
+ * \brief
+ *    Function body for random message destruction.
+ *************************************************************************************
+ */
 void user_data_generate_destroy_random_message(char * msg)
 {
     free(msg);
