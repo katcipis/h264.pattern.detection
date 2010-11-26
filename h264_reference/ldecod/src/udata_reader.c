@@ -9,7 +9,7 @@ void user_data_parser_unregistered_sei( byte* payload, int size)
   int offset = 0;
   byte payload_byte;
 
-  printf("User data unregistered SEI message\n");
+  printf("\nUser data unregistered SEI message, size[%d]\n", size);
   printf("uuid_iso_11578 = 0x");
   
   assert (size>=UUID_ISO_IEC_OFFSET);
@@ -19,12 +19,14 @@ void user_data_parser_unregistered_sei( byte* payload, int size)
     printf("%02x",payload[offset]);
   }
 
-  printf("\n");
+  printf("\nUser data unregistered SEI message start\n");
 
   while (offset < size)
   {
     payload_byte = payload[offset];
     offset ++;
-    printf("Unreg data payload_byte = %c\n", payload_byte);
+    printf("%c", payload_byte);
   }
+
+  printf("\nUser data unregistered SEI message end \n");
 }

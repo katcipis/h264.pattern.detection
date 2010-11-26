@@ -9,8 +9,10 @@
 
 static const char* random_message_start_template = "\nRandom message[%d] start\n";
 static const char* random_message_end_template   = "\nRandom message[%d] end!\n";
-static int random_msg_counter                    = 1;
+static int msg_counter                           = 1;
 static const int max_msg_size                    = MAXNALUSIZE - 1024; /* Lets guarantee that this + headers dont exceed the MAXNALUSIZE */
+static int growth_rate                           = 1024;
+static int actual_size                           = 1024;
 
 #define MAX_TEMPLATE_MSG_SIZE 512
 static char random_message_start_buffer[MAX_TEMPLATE_MSG_SIZE];
@@ -117,20 +119,20 @@ char* user_data_generate_create_random_message()
     int end_len   = 0;
     int i         = 0;
 
-    snprintf (random_message_start_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_start_template, random_msg_counter);
-    snprintf (random_message_end_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_end_template, random_msg_counter);
-    random_msg_counter++;
+    snprintf (random_message_start_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_start_template, msg_counter);
+    snprintf (random_message_end_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_end_template, msg_counter);
+    msg_counter++;
 
     start_len = strlen(random_message_start_buffer);
     end_len  = strlen(random_message_end_buffer);
 
-    body_size = rand() % (max_msg_size - (start_len + end_len));
-    
-    if (body_size == 0) {
-        /* bad luck */
-        body_size = 512;
-    }
+    body_size = actual_size;
+    actual_size += growth_rate;
 
+    if (actual_size > max_msg_size) {
+        actual_size = growth_rate;
+    }
+    
     msg_size = body_size + start_len +  end_len + 1;
     msg      = malloc(msg_size);
 
@@ -139,7 +141,7 @@ char* user_data_generate_create_random_message()
     
     /* writing the body */
     for (i = start_len; i < msg_size - end_len; i++) {
-        msg[i] = (char) i; /* whatever */
+        msg[i] = 'h'; /* whatever */
     }
 
     /* writing the end */
