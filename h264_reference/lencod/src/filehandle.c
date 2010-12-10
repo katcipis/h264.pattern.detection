@@ -21,7 +21,6 @@
 #include "annexb.h"
 #include "parset.h"
 #include "mbuffer.h"
-#include "udata_gen.h"
 
 
 /*!
@@ -133,17 +132,6 @@ int start_sequence(VideoParameters *p_Vid, InputParameters *p_Inp)
     len += p_Vid->WriteNALU (p_Vid, nalu);
     FreeNALU (nalu);
   }
-
-  /* Lets send 1000 SEI NALUs containing a SEI Userdata Unregistered message */
-  for (i = 0; i < 1000; i++) {
-      nalu = NULL;
-      char * msg = user_data_generate_create_random_message();
-      nalu = user_data_generate_unregistered_sei_nalu_from_msg(msg);
-      len += p_Vid->WriteNALU (p_Vid, nalu);
-      FreeNALU (nalu);
-      user_data_generate_destroy_random_message(msg);
-  }
-
 
   p_Vid->p_Stats->bit_ctr_parametersets_n = len;
 #if (MVC_EXTENSION_ENABLE)
