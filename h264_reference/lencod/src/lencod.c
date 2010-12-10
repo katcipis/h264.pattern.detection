@@ -702,6 +702,7 @@ static void encode_sequence(VideoParameters *p_Vid, InputParameters *p_Inp)
     if (p_Inp->ReportFrameStats)
       report_frame_statistic(p_Vid, p_Inp);
 
+    /* KATCIPIS TODO Here would be a good place to inser a SEI NALU */
   }
 
 #if EOS_OUTPUT
