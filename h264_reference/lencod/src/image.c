@@ -1167,6 +1167,13 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
   }
 
   process_image(p_Vid, p_Inp);
+  /* FIXME KATCIPIS - This sounds like a good place to process the raw YUV imgData */
+
+  printf("Frame width0[%d] width1[%d] width2[%d]\n", p_Vid->imgData.format.width[0], p_Vid->imgData.format.width[1], p_Vid->imgData.format.width[2]);
+  printf("Frame height0[%d] height1[%d] height2[%d]\n", p_Vid->imgData.format.height[0], p_Vid->imgData.format.height[1], p_Vid->imgData.format.height[2]);
+
+  // p_Vid->imgData.frm_data
+  /* FIXME end of my fooling around :-) */
   pad_borders (p_Inp->output, p_Vid->width, p_Vid->height, p_Vid->width_cr, p_Vid->height_cr, p_Vid->imgData.frm_data);
 
 #if (MVC_EXTENSION_ENABLE)
