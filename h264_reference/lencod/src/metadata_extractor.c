@@ -3,13 +3,16 @@
 #include <cvaux.h>
 #include <highgui.h>
 
+/* OpenCV redefines some types that already exists on JM reference software. */
+#undef int64
+#undef uint64
+
 
 static IplImage* metadata_extractor_from_planar_yuv420_to_interleaved_yuv444(ImageData *img)
 {
   IplImage *py, *pu, *pv, *pu_big, *pv_big, *image;
   int luma_width, chroma_width;
   int luma_height, chroma_height;
-  int i, temp;
 
   luma_width    = img->format.width[0];
   luma_height   = img->format.height[0];
@@ -29,13 +32,13 @@ static IplImage* metadata_extractor_from_planar_yuv420_to_interleaved_yuv444(Ima
   /* We assume that imgpel has the size of a byte, same as IPL_DEPTH_8U */
 
   /* Read Y */
-  memcpy(py->imageData[i], img->frm_data[0][0], luma_width * luma_height * sizeof (imgpel)); 
+  memcpy(py->imageData, img->frm_data[0][0], luma_width * luma_height * sizeof (imgpel)); 
 
   /* Read U */
-  memcpy(pu->imageData[i], img->frm_data[1][0], chroma_width * chroma_height * sizeof (imgpel));
+  memcpy(pu->imageData, img->frm_data[1][0], chroma_width * chroma_height * sizeof (imgpel));
 
   /* Read V */
-  memcpy(pv->imageData[i], img->frm_data[2][0], chroma_width * chroma_height * sizeof (imgpel));
+  memcpy(pv->imageData, img->frm_data[2][0], chroma_width * chroma_height * sizeof (imgpel));
 
   cvResize(pu, pu_big, CV_INTER_LINEAR);
   cvResize(pv, pv_big, CV_INTER_LINEAR);
@@ -81,14 +84,28 @@ Metadata * metadata_extractor_get_metadata_from_yuv_image(ImageData *img)
   {
     case YUV400:
       /* TODO */
-      
+      return NULL;
+      break;
+
+    case YUV422:
+      /* TODO */
+      return NULL;
+      break;
+
     case YUV420:
       /* the 2 chroma are then upsampled by a 2 factor, and return an image composed by 3 layer (YUV 4:4:4) */
       src = metadata_extractor_from_planar_yuv420_to_interleaved_yuv444(img);
+      break;
+
     case YUV444:
       /* Work already done, just interleave the image */
       src = metadata_extractor_from_planar_yuv444_to_interleaved_yuv444(img);
+      break;
 
+    default:
+      /* Panic ? */
+      return NULL;
+      break;
   }  
   
   /* Allocate the destiny BGR image */
@@ -96,7 +113,7 @@ Metadata * metadata_extractor_get_metadata_from_yuv_image(ImageData *img)
 
   cvNamedWindow("metadata_extractor_get_metadata_from_yuv_image", 1);
   cvShowImage("metadata_extractor_get_metadata_from_yuv_image", dst);
-  cvWaitKey();
+  cvWaitKey(1000);
 
   /* Do more stuff :-) */
   printf("Frame width0[%d] width1[%d] width2[%d]\n", img->format.width[0], img->format.width[1], img->format.width[2]);

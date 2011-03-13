@@ -89,8 +89,10 @@ typedef unsigned __int64   uint64;
 #  define INT64_MIN        (-9223372036854775807i64 - 1i64)
 # endif
 #else
+
 typedef long long int64;
-typedef unsigned long long  uint64;
+typedef unsigned long long  uint64; 
+
 # define FORMAT_OFF_T "lld"
 # ifndef INT64_MIN
 #  define INT64_MIN        (-9223372036854775807LL - 1LL)
