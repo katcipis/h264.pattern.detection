@@ -1174,6 +1174,7 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
 
   // p_Vid->imgData.frm_data
   /* FIXME end of my fooling around :-) */
+
   pad_borders (p_Inp->output, p_Vid->width, p_Vid->height, p_Vid->width_cr, p_Vid->height_cr, p_Vid->imgData.frm_data);
 
 #if (MVC_EXTENSION_ENABLE)
