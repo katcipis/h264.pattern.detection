@@ -23,23 +23,13 @@ typedef struct _ExtractedMetadata {
   unsigned int size;
 } ExtractedMetadata;
 
-typedef enum {
-  MetadataExtractor_YUV400,
-  MetadataExtractor_YUV420,
-  MetadataExtractor_YUV422,
-  MetadataExtractor_YUV444
-} MetadataExtractorYUVImageType;
-
-/* ImageData will be opaque here in*/
-
 /*!
  *****************************************************************************
- * Extracts metadata from a YUV planar image.
- * The chroma size can be guessed using the image type.
+ * Extracts metadata from a YUV 4:2:0 planar image.
  *
  * @param y The luma plane.
- * @param u The chroma plane.
- * @param v The chroma plane.
+ * @param u One chroma plane.
+ * @param v One chroma plane.
  * @param width The luma plane width.
  * @param height The luma plane height.
  * @param image_type Type of the YUV image.
@@ -49,7 +39,10 @@ typedef enum {
  *
  *****************************************************************************
  */
-ExtractedMetadata * metadata_extractor_extract(unsigned char * y, unsigned char * u, unsigned char * v,
-                                               int width, int height, MetadataExtractorYUVImageType image_type);
+ExtractedMetadata * metadata_extractor_extract_from_yuv_420(unsigned char * y, 
+                                                            unsigned char * u, 
+                                                            unsigned char * v,
+                                                            int width, 
+                                                            int height);
 
 #endif
