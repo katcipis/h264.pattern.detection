@@ -3,10 +3,6 @@
 #include <cvaux.h>
 #include <highgui.h>
 
-/* OpenCV redefines some types that already exists on JM reference software. */
-#undef int64
-#undef uint64
-
 
 static IplImage* metadata_extractor_from_planar_yuv420_to_interleaved_yuv444(ImageData *img)
 {
@@ -71,7 +67,7 @@ static IplImage* metadata_extractor_from_planar_yuv444_to_interleaved_yuv444(Ima
  *
  *************************************************************************************
  */
-Metadata * metadata_extractor_get_metadata_from_yuv_image(ImageData *img)
+ExtractedMetadata * metadata_extractor_get_metadata_from_yuv_image(ImageData *img)
 {
   /* OpenCV only works with interleaved BGR images (learning OpenCV p.43, footnote).
      Here we have planar YUV frames. Lets do some convertions. */
@@ -82,22 +78,22 @@ Metadata * metadata_extractor_get_metadata_from_yuv_image(ImageData *img)
   /* OpenCV needs a 4:4:4 interleaved YUV image */
   switch(img->format.yuv_format) 
   {
-    case YUV400:
+    case MetadataExtractor_YUV400:
       /* TODO */
       return NULL;
       break;
 
-    case YUV422:
+    case MetadataExtractor_YUV422:
       /* TODO */
       return NULL;
       break;
 
-    case YUV420:
+    case MetadataExtractor_YUV420:
       /* the 2 chroma are then upsampled by a 2 factor, and return an image composed by 3 layer (YUV 4:4:4) */
       src = metadata_extractor_from_planar_yuv420_to_interleaved_yuv444(img);
       break;
 
-    case YUV444:
+    case MetadataExtractor_YUV444:
       /* Work already done, just interleave the image */
       src = metadata_extractor_from_planar_yuv444_to_interleaved_yuv444(img);
       break;
@@ -121,3 +117,4 @@ Metadata * metadata_extractor_get_metadata_from_yuv_image(ImageData *img)
 
   return NULL;
 }
+
