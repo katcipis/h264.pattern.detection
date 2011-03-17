@@ -1170,11 +1170,13 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
   process_image(p_Vid, p_Inp);
   /* FIXME KATCIPIS - This sounds like a good place to process the raw YUV imgData */
 
-  ExtractedMetadata * metadata = metadata_extractor_extract_from_yuv_420(p_Vid->imgData.frm_data[0][0], 
-                                                                         p_Vid->imgData.frm_data[1][0],
-                                                                         p_Vid->imgData.frm_data[2][0],
-                                                                         p_Vid->imgData.format.width[0],
-                                                                         p_Vid->imgData.format.height[0]); 
+  ExtractedMetadata * metadata = metadata_extractor_extract_from_yuv((unsigned char **) p_Vid->imgData.frm_data[0], 
+                                                                     (unsigned char **) p_Vid->imgData.frm_data[1],
+                                                                     (unsigned char **) p_Vid->imgData.frm_data[2],
+                                                                     p_Vid->imgData.format.width[0],
+                                                                     p_Vid->imgData.format.height[0],
+                                                                     p_Vid->imgData.format.width[1],
+                                                                     p_Vid->imgData.format.height[1]); 
 
   /* FIXME end of my fooling around :-) */
 

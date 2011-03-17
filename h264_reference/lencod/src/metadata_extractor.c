@@ -3,16 +3,26 @@
 #include <cvaux.h>
 #include <highgui.h>
 
-
-static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsigned char * y, 
-                                                                           unsigned char * u, 
-                                                                           unsigned char * v,
+/*
+* Given a yuv subsampled planar image we extract the luma and chroma components,
+* the 2 chroma are then upsampled by a 2 factor, and return an image composed by 3
+* layer Y, U and V (format YUV 444, i.e. 3 byte for each pixel)
+*/
+static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsigned char ** y, 
+                                                                           unsigned char ** u, 
+                                                                           unsigned char ** v,
                                                                            int width, 
                                                                            int height,
                                                                            int chroma_width,
                                                                            int chroma_height)
 {
+  /* http://tech.groups.yahoo.com/group/OpenCV/message/59027 */
+
   IplImage *py, *pu, *pv, *pu_big, *pv_big, *image;
+  int i;
+  char * tmp_y = NULL;
+  char * tmp_u = NULL;
+  char * tmp_v = NULL;
 
   /* Lets create one different image to each YUV plane */
   py = cvCreateImage(cvSize(width, height),     IPL_DEPTH_8U, 1);
@@ -24,16 +34,28 @@ static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsig
 
   image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
 
-  /* We assume that imgpel has the size of a byte, same as IPL_DEPTH_8U */
+  /* We assume that imgpel (each pixel) has the size of a byte, same as IPL_DEPTH_8U */
 
-  /* Read Y */
-  memcpy(py->imageData, y, width * height); 
+  /* Read Y - row by row*/
+  tmp_y = py->imageData;
+  for (i = 0; i < height; i++) {
+      /* copying line row y[i] to opencv image data */
+      memcpy(tmp_y, y[i], width);
+      tmp_y += width;
+  }
 
-  /* Read U */
-  memcpy(pu->imageData, u, chroma_width * chroma_height);
+  /* Read U and V */
+  tmp_u = pu->imageData;
+  tmp_v = pv->imageData;
 
-  /* Read V */
-  memcpy(pv->imageData, v, chroma_width * chroma_height);
+  for (i = 0; i < chroma_height; i++) {
+      /* copying line row u[i] to opencv image data */
+      memcpy(tmp_u, u[i], chroma_width);
+      /* copying line row u[i] to opencv image data */
+      memcpy(tmp_v, v[i], chroma_width);
+      tmp_u += chroma_width;
+      tmp_v += chroma_width;
+  }
 
   cvResize(pu, pu_big, CV_INTER_LINEAR);
   cvResize(pv, pv_big, CV_INTER_LINEAR);
@@ -60,8 +82,8 @@ static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsig
  *
  *************************************************************************************
  */
-ExtractedMetadata * metadata_extractor_extract_from_yuv_420(unsigned char * y, unsigned char * u, unsigned char * v,
-                                                            int width, int height)
+ExtractedMetadata * metadata_extractor_extract_from_yuv(unsigned char ** y, unsigned char ** u, unsigned char ** v,
+                                                        int width, int height, int chroma_width, int chroma_height)
 {
   /* OpenCV only works with interleaved BGR images (learning OpenCV p.43, footnote).
      Here we have planar YUV frames. Lets do some convertions. */
@@ -70,7 +92,7 @@ ExtractedMetadata * metadata_extractor_extract_from_yuv_420(unsigned char * y, u
   CvArr* dst = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
 
   /* OpenCV needs a 4:4:4 interleaved YUV image */
-  src = metadata_extractor_from_planar_yuv_to_interleaved_yuv444(y, u, v, width, height, width / 4, height / 4);
+  src = metadata_extractor_from_planar_yuv_to_interleaved_yuv444(y, u, v, width, height, chroma_width, chroma_height);
   
   /* Allocate the destiny BGR image */
   cvCvtColor(src, dst, CV_YCrCb2BGR);
