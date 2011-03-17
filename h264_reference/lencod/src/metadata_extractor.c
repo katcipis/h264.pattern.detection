@@ -17,15 +17,13 @@ static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsig
                                                                            int chroma_height)
 {
   /* http://tech.groups.yahoo.com/group/OpenCV/message/59027 */
+  /* http://www.cs.iit.edu/~agam/cs512/lect-notes/opencv-intro/opencv-intro.html */  
 
   IplImage *py, *pu, *pv, *pu_big, *pv_big, *image;
-  int i;
-  char * tmp_y = NULL;
-  char * tmp_u = NULL;
-  char * tmp_v = NULL;
+  int i, j;
 
   /* Lets create one different image to each YUV plane */
-  py = cvCreateImage(cvSize(width, height),     IPL_DEPTH_8U, 1);
+  py = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
   pu = cvCreateImage(cvSize(chroma_width, chroma_height), IPL_DEPTH_8U, 1);
   pv = cvCreateImage(cvSize(chroma_width, chroma_height), IPL_DEPTH_8U, 1);
 
@@ -37,25 +35,28 @@ static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsig
   /* We assume that imgpel (each pixel) has the size of a byte, same as IPL_DEPTH_8U */
 
   /* Read Y - row by row*/
-  tmp_y = py->imageData;
   for (i = 0; i < height; i++) {
-      /* copying line row y[i] to opencv image data */
-      memcpy(tmp_y, y[i], width);
-      tmp_y += width;
+      for (j = 0; j < width; j++) {
+          cvSet2D(py, i, j, cvScalar(y[i][j], 0, 0, 0));
+      }
   }
 
   /* Read U and V */
-  tmp_u = pu->imageData;
-  tmp_v = pv->imageData;
-
   for (i = 0; i < chroma_height; i++) {
-      /* copying line row u[i] to opencv image data */
-      memcpy(tmp_u, u[i], chroma_width);
-      /* copying line row u[i] to opencv image data */
-      memcpy(tmp_v, v[i], chroma_width);
-      tmp_u += chroma_width;
-      tmp_v += chroma_width;
+      for (j = 0; j < chroma_width; j++) {
+          cvSet2D(pu, i, j, cvScalar(u[i][j], 0, 0, 0));
+          cvSet2D(pv, i, j, cvScalar(v[i][j], 0, 0, 0));
+      }
   }
+
+  cvNamedWindow("py", 1);
+  cvShowImage("py", py);
+
+  cvNamedWindow("pu", 1);
+  cvShowImage("pu", pu);
+
+  cvNamedWindow("pv", 1);
+  cvShowImage("pv", pv);
 
   cvResize(pu, pu_big, CV_INTER_LINEAR);
   cvResize(pv, pv_big, CV_INTER_LINEAR);
@@ -97,10 +98,13 @@ ExtractedMetadata * metadata_extractor_extract_from_yuv(unsigned char ** y, unsi
   /* Allocate the destiny BGR image */
   cvCvtColor(src, dst, CV_YCrCb2BGR);
 
-  cvNamedWindow("metadata_extractor_get_metadata_from_yuv_image", 1);
-  cvShowImage("metadata_extractor_get_metadata_from_yuv_image", dst);
-  cvWaitKey(1000);
+  cvNamedWindow("src", 1);
+  cvShowImage("src", src);
 
+  cvNamedWindow("dst", 1);
+  cvShowImage("dst", dst);
+
+  cvWaitKey(1000);
 
   return NULL;
 }
