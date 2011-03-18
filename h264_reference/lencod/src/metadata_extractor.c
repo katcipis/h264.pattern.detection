@@ -44,7 +44,6 @@ static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsig
   /* Read Y - row by row*/
   for (i = 0; i < height; i++) {
       for (j = 0; j < width; j++) {
-          printf("writing y byte[%c]\n", y[i][j]);
           fputc(y[i][j], dump);
       }
   }
@@ -52,14 +51,12 @@ static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsig
   /* Read U and V */
   for (i = 0; i < chroma_height; i++) {
       for (j = 0; j < chroma_width; j++) {
-          printf("writing u byte[%c]\n", u[i][j]);
           fputc(u[i][j], dump);
       }
   }
 
   for (i = 0; i < chroma_height; i++) {
       for (j = 0; j < chroma_width; j++) {
-          printf("writing v byte[%c]\n", u[i][j]);
           fputc(v[i][j], dump);
       }
   }
