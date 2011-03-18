@@ -2,6 +2,7 @@
 #include <cv.h>
 #include <cvaux.h>
 #include <highgui.h>
+#include <stdio.h>
 
 /*
 * Given a yuv subsampled planar image we extract the luma and chroma components,
@@ -20,7 +21,13 @@ static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsig
   /* http://www.cs.iit.edu/~agam/cs512/lect-notes/opencv-intro/opencv-intro.html */  
 
   IplImage *py, *pu, *pv, *pu_big, *pv_big, *image;
+  FILE * dump = fopen("/tmp/dump.yuv", "w");
   int i, j;
+
+  if (!dump) {
+      printf("CANT DUMP !!\n");
+      exit(0);
+  }
 
   /* Lets create one different image to each YUV plane */
   py = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
@@ -37,17 +44,29 @@ static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsig
   /* Read Y - row by row*/
   for (i = 0; i < height; i++) {
       for (j = 0; j < width; j++) {
-          cvSet2D(py, i, j, cvScalar(y[i][j], 0, 0, 0));
+          printf("writing y byte[%c]\n", y[i][j]);
+          fputc(y[i][j], dump);
       }
   }
 
   /* Read U and V */
   for (i = 0; i < chroma_height; i++) {
       for (j = 0; j < chroma_width; j++) {
-          cvSet2D(pu, i, j, cvScalar(u[i][j], 0, 0, 0));
-          cvSet2D(pv, i, j, cvScalar(v[i][j], 0, 0, 0));
+          printf("writing u byte[%c]\n", u[i][j]);
+          fputc(u[i][j], dump);
       }
   }
+
+  for (i = 0; i < chroma_height; i++) {
+      for (j = 0; j < chroma_width; j++) {
+          printf("writing v byte[%c]\n", u[i][j]);
+          fputc(v[i][j], dump);
+      }
+  }
+
+  printf("dumped frame !!!\n");
+  fclose(dump);
+  exit(0);
 
   cvNamedWindow("py", 1);
   cvShowImage("py", py);
