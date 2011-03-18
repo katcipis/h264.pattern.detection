@@ -34,7 +34,7 @@
 #define GET_METIME                1    //!< Enables or disables ME computation time
 #define DUMP_DPB                  0    //!< Dump DPB info for debug purposes
 #define PRINTREFLIST              0    //!< Print ref list info for debug purposes
-#define IMGTYPE                   1    //!< Define imgpel size type. 0 implies byte (cannot handle >8 bit depths) and 1 implies unsigned short
+#define IMGTYPE                   0    //!< Define imgpel size type. 0 implies byte (cannot handle >8 bit depths) and 1 implies unsigned short
 #define ENABLE_FIELD_CTX          1    //!< Enables field context types for CABAC. If disabled, results in speedup for progressive content.
 #define ENABLE_HIGH444_CTX        1    //!< Enables High 444 context types for CABAC. If disabled, results in speedup of non High444 profile encodings.
 #define DEBUG_BITDEPTH            0    //!< Ensures that > 8 bit content have no values that would result in out of range results
