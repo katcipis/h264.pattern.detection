@@ -25,15 +25,11 @@ typedef struct _ExtractedMetadata {
 
 /*!
  *****************************************************************************
- * Extracts metadata from a YUV planar image.
+ * Extracts metadata from the Y plane.
  *
  * @param y The luma plane, y[i][j] where i is the row and j the column.
- * @param u One chroma plane, u[i][j] where i is the row and j the column.
- * @param v One chroma plane, v[i][j] where i is the row and j the column..
  * @param width The luma plane width.
  * @param height The luma plane height.
- * @param chroma_width The chroma plane width.
- * @param chroma_height The chroma plane height.
  *
  * @return A Metadata object containing metadata information, or NULL if no 
  *         usefull metadata is found on the image.
@@ -41,11 +37,7 @@ typedef struct _ExtractedMetadata {
  *****************************************************************************
  */
 ExtractedMetadata * metadata_extractor_extract_from_yuv(unsigned char ** y, 
-                                                        unsigned char ** u, 
-                                                        unsigned char ** v,
                                                         int width, 
-                                                        int height,
-                                                        int chroma_width,
-                                                        int chroma_height);
+                                                        int height);
 
 #endif

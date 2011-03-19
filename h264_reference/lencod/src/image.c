@@ -1168,17 +1168,14 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
   }
 
   process_image(p_Vid, p_Inp);
-  pad_borders (p_Inp->output, p_Vid->width, p_Vid->height, p_Vid->width_cr, p_Vid->height_cr, p_Vid->imgData.frm_data);
 
-  /* FIXME KATCIPIS - This sounds like a good place to process the raw YUV imgData */
+  /* FIXME KATCIPIS - This sounds like a good place to process the raw Y imgData. */
   ExtractedMetadata * metadata = metadata_extractor_extract_from_yuv((unsigned char **) p_Vid->imgData.frm_data[0],
-                                                                     (unsigned char **) p_Vid->imgData.frm_data[1],
-                                                                     (unsigned char **) p_Vid->imgData.frm_data[2],
-                                                                     p_Vid->imgData.format.width[0],
-                                                                     p_Vid->imgData.format.height[0],
-                                                                     p_Vid->imgData.format.width[1],
-                                                                     p_Vid->imgData.format.height[1]);
-  /* FIXME end of my fooling around :-) */
+                                                                                        p_Vid->imgData.format.width[0],
+                                                                                        p_Vid->imgData.format.height[0]);
+  /* FIXME KATCIPIS end of my fooling around :-) */
+
+  pad_borders (p_Inp->output, p_Vid->width, p_Vid->height, p_Vid->width_cr, p_Vid->height_cr, p_Vid->imgData.frm_data);
 
 #if (MVC_EXTENSION_ENABLE)
   if(p_Inp->num_of_views==1 || p_Vid->view_id==0)

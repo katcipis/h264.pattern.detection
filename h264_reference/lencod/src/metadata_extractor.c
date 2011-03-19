@@ -4,91 +4,6 @@
 #include <highgui.h>
 #include <stdio.h>
 
-/*
-* Given a yuv subsampled planar image we extract the luma and chroma components,
-* the 2 chroma are then upsampled by a 2 factor, and return an image composed by 3
-* layer Y, U and V (format YUV 444, i.e. 3 byte for each pixel)
-*/
-static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsigned char ** y, 
-                                                                           unsigned char ** u, 
-                                                                           unsigned char ** v,
-                                                                           int width, 
-                                                                           int height,
-                                                                           int chroma_width,
-                                                                           int chroma_height)
-{
-  /* http://tech.groups.yahoo.com/group/OpenCV/message/59027 */
-  /* http://www.cs.iit.edu/~agam/cs512/lect-notes/opencv-intro/opencv-intro.html */  
-
-  IplImage *py, *pu, *pv, *pu_big, *pv_big, *image;
-  FILE * dump = fopen("/tmp/dump.yuv", "w");
-  int i, j;
-
-  if (!dump) {
-      printf("CANT DUMP !!\n");
-      exit(0);
-  }
-
-  /* Lets create one different image to each YUV plane */
-  py = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
-  pu = cvCreateImage(cvSize(chroma_width, chroma_height), IPL_DEPTH_8U, 1);
-  pv = cvCreateImage(cvSize(chroma_width, chroma_height), IPL_DEPTH_8U, 1);
-
-  pu_big = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
-  pv_big = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
-
-  image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
-
-  /* We assume that imgpel (each pixel) has the size of a byte, same as IPL_DEPTH_8U */
-
-  /* Read Y - row by row*/
-  for (i = 0; i < height; i++) {
-      for (j = 0; j < width; j++) {
-          fputc(y[i][j], dump);
-      }
-  }
-
-  /* Read U and V */
-  for (i = 0; i < chroma_height; i++) {
-      for (j = 0; j < chroma_width; j++) {
-          fputc(u[i][j], dump);
-      }
-  }
-
-  for (i = 0; i < chroma_height; i++) {
-      for (j = 0; j < chroma_width; j++) {
-          fputc(v[i][j], dump);
-      }
-  }
-
-  printf("dumped frame !!!\n");
-  fclose(dump);
-  exit(0);
-
-  cvNamedWindow("py", 1);
-  cvShowImage("py", py);
-
-  cvNamedWindow("pu", 1);
-  cvShowImage("pu", pu);
-
-  cvNamedWindow("pv", 1);
-  cvShowImage("pv", pv);
-
-  cvResize(pu, pu_big, CV_INTER_LINEAR);
-  cvResize(pv, pv_big, CV_INTER_LINEAR);
-
-  cvReleaseImage(&pu);
-  cvReleaseImage(&pv);
-
-  cvMerge(py, pu_big, pv_big, NULL, image);
-
-  cvReleaseImage(&py);
-  cvReleaseImage(&pu_big);
-  cvReleaseImage(&pv_big);
-
-  return image;
-}
-
 /*!
  *************************************************************************************
  * \brief
@@ -99,26 +14,30 @@ static IplImage* metadata_extractor_from_planar_yuv_to_interleaved_yuv444 (unsig
  *
  *************************************************************************************
  */
-ExtractedMetadata * metadata_extractor_extract_from_yuv(unsigned char ** y, unsigned char ** u, unsigned char ** v,
-                                                        int width, int height, int chroma_width, int chroma_height)
+ExtractedMetadata * metadata_extractor_extract_from_yuv(unsigned char ** y, int width, int height)
 {
-  /* OpenCV only works with interleaved BGR images (learning OpenCV p.43, footnote).
-     Here we have planar YUV frames. Lets do some convertions. */
+  /* First we must convert the Y luma plane to BGR Grayscale. 
+     On grayscale Y = R = G = B. Pretty simple to convert. */
 
-  CvArr* src = NULL;
-  CvArr* dst = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
+  IplImage * frame = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
+  int frame_i = 0;
+  int row = 0;
+  int col = 0;
 
-  /* OpenCV needs a 4:4:4 interleaved YUV image */
-  src = metadata_extractor_from_planar_yuv_to_interleaved_yuv444(y, u, v, width, height, chroma_width, chroma_height);
-  
-  /* Allocate the destiny BGR image */
-  cvCvtColor(src, dst, CV_YCrCb2BGR);
+  /* We must write R G B with the same Y sample*/
+  for (row = 0; row < height; row++) {
 
-  cvNamedWindow("src", 1);
-  cvShowImage("src", src);
+    for (col = 0; col < width; col++) {
 
-  cvNamedWindow("dst", 1);
-  cvShowImage("dst", dst);
+      frame->imageData[frame_i] = y[row][col];
+      frame->imageData[frame_i + 1] = y[row][col];
+      frame->imageData[frame_i + 2] = y[row][col];
+      frame_i += 3;
+    }
+  }
+
+  cvNamedWindow("frame", 1);
+  cvShowImage("frame", frame);
 
   cvWaitKey(1000);
 
