@@ -82,7 +82,7 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
      these differences might be skewed by overall lighting or exposure of the test images. */
   cvEqualizeHist(gray, gray);
 
-  
+ 
   /* Lets start detection */
   init_haar_facilities();
 
@@ -115,7 +115,12 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
     /* Allocate some space for the object */
     metadata->height = res->height;
     metadata->width  = res->width;
-    metadata->y      = malloc(res->height);
+    metadata->y      = malloc(sizeof(unsigned char *) * res->height);
+
+    if (!metadata->y) {
+      printf("Error alocating %d bytes\n", res->height);
+      exit(-1);
+    }
 
     /* Copy the object from the original frame */
     for (row = res->y; row < (res->height + res->y); row++) {
@@ -150,6 +155,6 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
   */
 
   printf("Done !!! \n");
-  return metadata_objs;
+  return NULL;
 }
 
