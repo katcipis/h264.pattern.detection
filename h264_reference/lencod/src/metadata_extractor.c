@@ -38,6 +38,30 @@ static void init_haar_facilities()
   cvClearMemStorage(storage);
 }
 
+static ExtractedMetadata * metadata_extractor_new_metadata(int width, int height)
+{
+  ExtractedMetadata * metadata = malloc(sizeof(ExtractedMetadata));
+  unsigned char ** y_rows      = malloc(sizeof(unsigned char *) * height);
+  unsigned char * y_plane      = malloc(sizeof(unsigned char) * height * width);
+  int row_offset               = 0;
+  int row; 
+
+  /* Filling the rows */
+  for (row = 0; row < height; row++) {
+    
+    y_rows[row] = y_plane + row_offset;
+    row_offset += width;    
+  }
+
+  metadata->height = height;
+  metadata->width  = width;
+  metadata->y = y_rows;
+
+  return metadata;
+}
+
+
+
 /*!
  *************************************************************************************
  * \brief
@@ -107,31 +131,16 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
 
   for( i = 0; i < results->total; i++ ) {
   
-    ExtractedMetadata * metadata = malloc(sizeof(ExtractedMetadata));
     CvRect* res                  = (CvRect*)cvGetSeqElem( results, i);
+    ExtractedMetadata * metadata = metadata_extractor_new_metadata(res->width, res->height);
     int i                        = 0;
 
     printf("generating metadata[%d]\n", i); 
-    /* Allocate some space for the object */
-    metadata->height = res->height;
-    metadata->width  = res->width;
-    metadata->y      = malloc(sizeof(unsigned char *) * res->height);
-
-    if (!metadata->y) {
-      printf("Error alocating %d bytes\n", res->height);
-      exit(-1);
-    }
 
     /* Copy the object from the original frame */
     for (row = res->y; row < (res->height + res->y); row++) {
 
       int j          = 0;
-      metadata->y[i] = malloc(res->width);
-
-      if (!metadata->y[i]) {
-        printf("Error alocating %d bytes\n", res->width);  
-        exit(-1);
-      }
 
       for (col = res->x; col < (res->width + res->x); col ++) {
           metadata->y[i][j] = y[row][col];
