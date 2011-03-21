@@ -125,6 +125,7 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
 
   printf("Found [%d] metadata objects !!!\n", results->total);
 
+  #if 0
   metadata_objs = malloc(sizeof(ExtractedMetadata *) * (results->total + 1));
 
   /* On this case we will sent the grayscale found object as metadata (uncompressed) */
@@ -155,7 +156,13 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
   }
  
   /* NULL termination */
-  metadata_objs[results->total = 1] = NULL;
+  metadata_objs[results->total] = NULL;
+
+  #endif 
+
+  /* Freeing images */
+  cvReleaseImage(&frame);
+  cvReleaseImage(&gray);
 
   /*
   cvNamedWindow("frame", 1);
