@@ -19,7 +19,7 @@
    yeah, long names seems to be nasty, but at least they dont CLASH with other type names ;-) */
 
 typedef struct _ExtractedMetadata {
-  unsigned char * y;
+  unsigned char ** y;
   int width;
   int height;
 } ExtractedMetadata;

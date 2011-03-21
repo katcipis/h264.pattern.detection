@@ -109,7 +109,9 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
   
     ExtractedMetadata * metadata = malloc(sizeof(ExtractedMetadata));
     CvRect* res                  = (CvRect*)cvGetSeqElem( results, i);
- 
+    int i                        = 0;
+
+    printf("generating metadata[%d]\n", i); 
     /* Allocate some space for the object */
     metadata->height = res->height;
     metadata->width  = res->width;
@@ -118,11 +120,23 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
     /* Copy the object from the original frame */
     for (row = res->y; row < (res->height + res->y); row++) {
 
-      metadata->y[row] = malloc(res->width);
-      memcpy (metadata->y[row], y[row] + res->x, res->width);
+      int j          = 0;
+      metadata->y[i] = malloc(res->width);
 
+      if (!metadata->y[i]) {
+        printf("Error alocating %d bytes", res->width);  
+        exit(-1);
+      }
+
+      for (col = res->x; col < (res->width + res->x); col ++) {
+          metadata->y[i][j] = y[row][col];
+          j++;
+      }
+
+      i++;
     }
 
+    printf("done generating metadata\n");
     metadata_objs[i] = metadata;
   }
  
@@ -135,6 +149,7 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
   cvWaitKey(1000);
   */
 
+  printf("Done !!! \n");
   return metadata_objs;
 }
 
