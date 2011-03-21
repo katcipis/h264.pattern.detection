@@ -80,7 +80,7 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
   IplImage * frame                   = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
   IplImage * gray                    = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
   CvSeq* results                     = NULL;
-  ExtractedMetadata ** metadata_objs = NULL;
+  //ExtractedMetadata ** metadata_objs = NULL;
 
   int frame_i = 0;
   int row     = 0;
@@ -125,8 +125,7 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
 
   printf("Found [%d] metadata objects !!!\n", results->total);
 
-  #if 0
-  metadata_objs = malloc(sizeof(ExtractedMetadata *) * (results->total + 1));
+  //metadata_objs = malloc(sizeof(ExtractedMetadata *) * (results->total + 1));
 
   /* On this case we will sent the grayscale found object as metadata (uncompressed) */
 
@@ -134,8 +133,7 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
   
     CvRect* res                  = (CvRect*)cvGetSeqElem( results, i);
     ExtractedMetadata * metadata = metadata_extractor_new_metadata(res->width, res->height);
-    int i                        = 0;
-
+    
     printf("generating metadata[%d]\n", i); 
 
     /* Copy the object from the original frame */
@@ -152,13 +150,11 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
     }
 
     printf("done generating metadata\n");
-    metadata_objs[i] = metadata;
+    //*(metadata_objs + i) = NULL;
   }
  
   /* NULL termination */
-  metadata_objs[results->total] = NULL;
-
-  #endif 
+  //metadata_objs[results->total] = NULL;
 
   /* Freeing images */
   cvReleaseImage(&frame);
