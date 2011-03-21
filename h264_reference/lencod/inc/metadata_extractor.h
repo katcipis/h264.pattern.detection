@@ -19,8 +19,9 @@
    yeah, long names seems to be nasty, but at least they dont CLASH with other type names ;-) */
 
 typedef struct _ExtractedMetadata {
-  char * data;
-  unsigned int size;
+  unsigned char * y;
+  int width;
+  int height;
 } ExtractedMetadata;
 
 /*!
@@ -31,13 +32,13 @@ typedef struct _ExtractedMetadata {
  * @param width The luma plane width.
  * @param height The luma plane height.
  *
- * @return A Metadata object containing metadata information, or NULL if no 
- *         usefull metadata is found on the image.
+ * @return A NULL terminated array of Metadata objects containing metadata 
+ *         information or NULL if no usefull metadata is found on the image.
  *
  *****************************************************************************
  */
-ExtractedMetadata * metadata_extractor_extract_from_yuv(unsigned char ** y, 
-                                                        int width, 
-                                                        int height);
+ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, 
+                                                         int width, 
+                                                         int height);
 
 #endif
