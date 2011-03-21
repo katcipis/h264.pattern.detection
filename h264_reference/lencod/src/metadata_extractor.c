@@ -124,7 +124,7 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
       metadata->y[i] = malloc(res->width);
 
       if (!metadata->y[i]) {
-        printf("Error alocating %d bytes", res->width);  
+        printf("Error alocating %d bytes\n", res->width);  
         exit(-1);
       }
 
