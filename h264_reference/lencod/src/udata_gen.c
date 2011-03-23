@@ -98,6 +98,10 @@ static int GenerateUserDataSEImessage_rbsp (int id, byte *rbsp, char* sei_messag
  */
 NALU_t * user_data_generate_unregistered_sei_nalu(char * data, unsigned int size)
 {
+  if (size > MAXNALUSIZE) {
+    error("user_data_generate_unregistered_sei_nalu: Trying to generate a NALU with a size bigger than MAXNALUSIZE", 500);
+  }
+
   NALU_t *n = AllocNALU(MAXNALUSIZE);
   int RBSPlen = 0;
   byte rbsp[MAXRBSPSIZE];

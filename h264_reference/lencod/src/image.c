@@ -66,6 +66,7 @@
 #include "md_common.h"
 #include "me_epzs_common.h"
 #include "metadata_extractor.h"
+#include "udata_gen.h"
 
 extern void UpdateDecoders            (VideoParameters *p_Vid, InputParameters *p_Inp, StorablePicture *enc_pic);
 
@@ -1169,11 +1170,37 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
 
   process_image(p_Vid, p_Inp);
 
-  /* FIXME KATCIPIS - This sounds like a good place to process the raw Y imgData. */
-  ExtractedMetadata * metadata = metadata_extractor_extract_from_yuv((unsigned char **) p_Vid->imgData.frm_data[0],
-                                                                                        p_Vid->imgData.format.width[0],
-                                                                                        p_Vid->imgData.format.height[0]);
-  /* FIXME KATCIPIS end of my fooling around :-) */
+  /*  KATCIPIS - This sounds like a good place to process the raw Y imgData. */
+
+  ExtractedMetadata ** metadata = metadata_extractor_extract_from_y((unsigned char **) p_Vid->imgData.frm_data[0],
+                                                                                       p_Vid->imgData.format.width[0],
+                                                                                       p_Vid->imgData.format.height[0]);
+
+  if (metadata) {
+    ExtractedMetadata ** tmp = metadata;
+
+    while (*tmp) {
+      ExtractedMetadata * obj = *tmp;
+      int size                = extracted_metadata_get_serialized_size(obj);
+      char * data             = malloc(size);
+      NALU_t * nalu           = NULL;
+     
+      /* Serialize the metadata */
+      extracted_metadata_serialize(obj, data);
+      
+      /* Insert the serialized metadata on the bitstream as SEI NALU. */
+      nalu = user_data_generate_unregistered_sei_nalu(data, size);
+      p_Vid->WriteNALU (p_Vid, nalu);
+
+      FreeNALU (nalu);
+      free(data);
+      tmp++;
+    }
+
+    metadata_extractor_free_all_extracted_metadata(metadata);
+  }
+
+  /* KATCIPIS end of metadata extracting */
 
   pad_borders (p_Inp->output, p_Vid->width, p_Vid->height, p_Vid->width_cr, p_Vid->height_cr, p_Vid->imgData.frm_data);
 

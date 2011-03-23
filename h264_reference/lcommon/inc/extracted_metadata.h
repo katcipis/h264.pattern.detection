@@ -17,7 +17,7 @@
 typedef struct _ExtractedYUVImage ExtractedYUVImage;
 typedef struct _ExtractedMetadata ExtractedMetadata;
 
-/* ExtractedImage API */
+/* ExtractedYUVImage API */
 
 /*!
  *******************************************************************************
@@ -34,7 +34,7 @@ ExtractedYUVImage * extracted_yuv_image_new(int width, int height);
 /*!
  *******************************************************************************
  * Get the luma plane of the extracted image.
- * y[row][col] format. Each pixel has 8 bits.
+ * y[row][col] format. Each pixel has 8 bits depth.
  *
  * @return The luma plane.
  *

@@ -38,17 +38,29 @@ static void init_haar_facilities()
   cvClearMemStorage(storage);
 }
 
+void metadata_extractor_free_all_extracted_metadata(ExtractedMetadata ** metadata_objs)
+{
+  ExtractedMetadata ** tmp = metadata_objs;
+
+  while (*tmp) {
+    extracted_metadata_free(*tmp);
+    ++tmp;
+  }
+
+  free(metadata_objs);
+}
+
 /*!
  *************************************************************************************
  * \brief
- *    Function body for extract metadata from a yuv image.
+ *    Function body for extract metadata from the y image plane.
  *
  * \return
- *    The ExtractedMetadata object or NULL.
+ *    A ExtractedMetadata object array (NULL terminated) or NULL in case no metadata is extracted.
  *
  *************************************************************************************
  */
-ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int width, int height)
+ExtractedMetadata ** metadata_extractor_extract_from_y(unsigned char ** y, int width, int height)
 {
   /* First we must convert the Y luma plane to BGR and them to grayscale. 
      On grayscale Y = R = G = B. Pretty simple to convert. */

@@ -82,7 +82,6 @@
 #include "img_process.h"
 #include "q_offsets.h"
 #include "pred_struct.h"
-#include "udata_gen.h"
 
 static const int mb_width_cr[4] = {0, 8, 8,16};
 static const int mb_height_cr[4]= {0, 8,16,16};
@@ -702,13 +701,6 @@ static void encode_sequence(VideoParameters *p_Vid, InputParameters *p_Inp)
 
     if (p_Inp->ReportFrameStats)
       report_frame_statistic(p_Vid, p_Inp);
-
-    /* FIXME KATCIPIS Here would be a good place to inser a SEI NALU */
-    char * msg   = user_data_generate_create_random_message();
-    NALU_t *nalu = user_data_generate_unregistered_sei_nalu_from_msg(msg);
-    p_Vid->WriteNALU (p_Vid, nalu);
-    FreeNALU (nalu);
-    user_data_generate_destroy_random_message(msg);
   }
 
 #if EOS_OUTPUT
