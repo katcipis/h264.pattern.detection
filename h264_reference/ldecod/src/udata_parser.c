@@ -30,3 +30,11 @@ void user_data_parser_unregistered_sei( byte* payload, int size)
 
   printf("\nUser data unregistered SEI message end \n");
 }
+
+void user_data_parser_unregistered_sei_get_data(byte* payload, int size, byte ** outdata, int * outsize)
+{
+  assert (size>=UUID_ISO_IEC_OFFSET);
+
+  *outdata = payload + UUID_ISO_IEC_OFFSET;
+  *outsize = size - UUID_ISO_IEC_OFFSET;
+}

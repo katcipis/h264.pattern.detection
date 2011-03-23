@@ -38,30 +38,6 @@ static void init_haar_facilities()
   cvClearMemStorage(storage);
 }
 
-static ExtractedMetadata * metadata_extractor_new_metadata(int width, int height)
-{
-  ExtractedMetadata * metadata = malloc(sizeof(ExtractedMetadata));
-  unsigned char ** y_rows      = malloc(sizeof(unsigned char *) * height);
-  unsigned char * y_plane      = malloc(sizeof(unsigned char) * height * width);
-  int row_offset               = 0;
-  int row; 
-
-  /* Filling the rows */
-  for (row = 0; row < height; row++) {
-    
-    y_rows[row] = y_plane + row_offset;
-    row_offset += width;    
-  }
-
-  metadata->height = height;
-  metadata->width  = width;
-  metadata->y = y_rows;
-
-  return metadata;
-}
-
-
-
 /*!
  *************************************************************************************
  * \brief
@@ -119,40 +95,33 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
                                   MIN_SIZE);
 
   if (results && (results->total <= 0) ) {
-      printf("Cant extract metadata from this frame \n");
       return NULL;
   }
 
-  printf("Found [%d] metadata objects !!!\n", results->total);
-
   metadata_objs = malloc(sizeof(ExtractedMetadata *) * (results->total + 1));
-  printf("Allocated [%d]bytes\n", sizeof(ExtractedMetadata *) * (results->total + 1));
 
   /* On this case we will sent the grayscale found object as metadata (uncompressed) */
 
   for( i = 0; i < results->total; i++ ) {
   
     CvRect* res                  = (CvRect*)cvGetSeqElem( results, i);
-    ExtractedMetadata * metadata = metadata_extractor_new_metadata(res->width, res->height);
-    int metadata_row = 0;
+    ExtractedYUVImage * metadata = extracted_yuv_image_new(res->width, res->height);
+    unsigned char ** y_plane     = extracted_yuv_image_get_y(metadata);
+    int metadata_row             = 0;
    
-    printf("generating metadata[%d]\n", i); 
-
     /* Copy the object from the original frame */
     for (row = res->y; row < (res->height + res->y); row++) {
 
       int metadata_col = 0;
 
       for (col = res->x; col < (res->width + res->x); col ++) {
-          metadata->y[metadata_row][metadata_col] = y[row][col];
+          y_plane[metadata_row][metadata_col] = y[row][col];
           metadata_col++;
       }
       metadata_row++;
     }
 
-    printf("done generating metadata\n");
-    printf("saving metadata [%d]\n", i);
-    metadata_objs[i] = metadata;
+    metadata_objs[i] = (ExtractedMetadata *) metadata;
   }
  
   /* NULL termination */
@@ -168,7 +137,6 @@ ExtractedMetadata ** metadata_extractor_extract_from_yuv(unsigned char ** y, int
   cvWaitKey(1000);
   */
 
-  printf("Done !!! \n");
   return NULL;
 }
 

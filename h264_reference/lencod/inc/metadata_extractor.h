@@ -18,11 +18,8 @@
    OpenCV (including global.h breaks everything). Isnt just great when people do typedefs with GOOD names ? :-)
    yeah, long names seems to be nasty, but at least they dont CLASH with other type names ;-) */
 
-typedef struct _ExtractedMetadata {
-  unsigned char ** y;
-  int width;
-  int height;
-} ExtractedMetadata;
+#include "extracted_metadata.h"
+
 
 /*!
  *****************************************************************************
