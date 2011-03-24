@@ -1,4 +1,5 @@
 #include "extracted_metadata.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -31,6 +32,8 @@ struct _ExtractedYUVImage {
 
 static const int EXTRACTED_METADATA_TYPE_SIZE = 1;
 
+static ExtractedMetadata * extracted_yuv_image_deserialize(const char * data, int size);
+
 /*
  ********************************
  * ExtractedMetadata Public API *
@@ -55,6 +58,20 @@ void extracted_metadata_serialize(ExtractedMetadata * metadata, char * serialize
 
 ExtractedMetadata * extracted_metadata_deserialize(const char * data, int size)
 {
+  /* first byte is the metadata type */
+  ExtractedMetadataType type = (ExtractedMetadataType) *data;
+
+  switch (type) 
+  {
+    case ExtractedMetadataYUVImage:
+      extracted_yuv_image_deserialize(data + EXTRACTED_METADATA_TYPE_SIZE, size - EXTRACTED_METADATA_TYPE_SIZE);
+      break;
+
+    default:
+      printf("extracted_metadata_deserialize: cant find the extracted metadata type !!!\n");
+      return NULL;
+  }
+ 
   return NULL;
 }
 
@@ -136,6 +153,11 @@ static void extracted_yuv_image_free(ExtractedMetadata * metadata)
 
   /* freeing the rows array */
   free(img->y);
+}
+
+static ExtractedMetadata * extracted_yuv_image_deserialize(const char * data, int size)
+{
+  return NULL;
 }
 
 static void extracted_yuv_image_serialize (ExtractedMetadata * metadata, char * data)
