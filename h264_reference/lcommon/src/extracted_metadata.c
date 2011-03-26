@@ -60,19 +60,19 @@ ExtractedMetadata * extracted_metadata_deserialize(const char * data, int size)
 {
   /* first byte is the metadata type */
   ExtractedMetadataType type = (ExtractedMetadataType) *data;
+  ExtractedMetadata * ret    = NULL;
 
   switch (type) 
   {
     case ExtractedMetadataYUVImage:
-      extracted_yuv_image_deserialize(data + EXTRACTED_METADATA_TYPE_SIZE, size - EXTRACTED_METADATA_TYPE_SIZE);
+      ret = extracted_yuv_image_deserialize(data + EXTRACTED_METADATA_TYPE_SIZE, size - EXTRACTED_METADATA_TYPE_SIZE);
       break;
 
     default:
       printf("extracted_metadata_deserialize: cant find the extracted metadata type !!!\n");
-      return NULL;
   }
  
-  return NULL;
+  return ret;
 }
 
 /*
@@ -113,14 +113,14 @@ ExtractedYUVImage * extracted_yuv_image_new(int width, int height)
 
   /* Filling the rows */
   for (row = 0; row < height; row++) {
-
+    /* y[0] = y_plane + 0. So y[0] points to the entire allocated plane */
     y_rows[row] = y_plane + row_offset;
     row_offset += width;
   }
 
-  metadata->height      = height;
-  metadata->width       = width;
-  metadata->y           = y_rows;
+  metadata->height = height;
+  metadata->width  = width;
+  metadata->y      = y_rows;
   
   extracted_metadata_init((ExtractedMetadata *) metadata,
                           extracted_yuv_image_free,
@@ -157,7 +157,40 @@ static void extracted_yuv_image_free(ExtractedMetadata * metadata)
 
 static ExtractedMetadata * extracted_yuv_image_deserialize(const char * data, int size)
 {
-  return NULL;
+  uint16_t width;
+  uint16_t height;
+  int plane_size;
+  ExtractedYUVImage * img = NULL; 
+
+  if (size < (sizeof(uint16_t) * 2)) {
+    printf("extracted_yuv_image_deserialize: invalid serialized ExtractedYUVImage !!!\n");
+    return NULL;
+  }
+
+  /* avoid problems with type size and endianness */
+  width = ntohs(*((uint16_t *) data));
+  data += sizeof(uint16_t);
+
+  /* avoid problems with type size and endianness */
+  height = ntohs(*((uint16_t *) data));
+  data += sizeof(uint16_t);
+
+  size -= sizeof(uint16_t) * 2;
+
+  plane_size = width * height * sizeof(unsigned char);
+
+  if (size != plane_size) {
+    printf("extracted_yuv_image_deserialize: expected plane_size[%d] but was [%d]!!!\n", size, plane_size);
+    return NULL;
+  }
+
+  /* Lets create a new empty image */
+  img   = extracted_yuv_image_new(width, height);
+
+  /* lets fill the plane */
+  memcpy(img->y[0], data, width * height * sizeof(unsigned char));
+
+  return (ExtractedMetadata *) img;
 }
 
 static void extracted_yuv_image_serialize (ExtractedMetadata * metadata, char * data)
