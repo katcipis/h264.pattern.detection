@@ -14,14 +14,14 @@
 #define EXTRACTED_METADATA_H
 
 
-typedef struct _ExtractedYUVImage ExtractedYUVImage;
+typedef struct _ExtractedYImage ExtractedYImage;
 typedef struct _ExtractedMetadata ExtractedMetadata;
 
-/* ExtractedYUVImage API */
+/* ExtractedYImage API */
 
 /*!
  *******************************************************************************
- * Creates a new extracted image.
+ * Creates a new extracted image, the image only has the luma plane (Y).
  *
  * @param width The width of the image that will be saved.
  * @param height The height of the image that will be saved.
@@ -29,7 +29,7 @@ typedef struct _ExtractedMetadata ExtractedMetadata;
  *
  *******************************************************************************
  */
-ExtractedYUVImage * extracted_yuv_image_new(int width, int height);
+ExtractedYImage * extracted_y_image_new(int width, int height);
 
 /*!
  *******************************************************************************
@@ -40,7 +40,7 @@ ExtractedYUVImage * extracted_yuv_image_new(int width, int height);
  *
  *******************************************************************************
  */
-unsigned char ** extracted_yuv_image_get_y(ExtractedYUVImage * img);
+unsigned char ** extracted_y_image_get_y(ExtractedYImage * img);
 
 /* ExtractedMetadata API */
 

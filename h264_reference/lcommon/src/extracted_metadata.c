@@ -11,7 +11,7 @@ typedef int  (*ExtractedMetadataGetSerializedSizeFunc) (ExtractedMetadata *);
 
 typedef enum {
   /* 1 byte only */
-  ExtractedMetadataYUVImage = 0x01
+  ExtractedMetadataYImage = 0x01
 } ExtractedMetadataType;
 
 struct _ExtractedMetadata {
@@ -21,7 +21,7 @@ struct _ExtractedMetadata {
   ExtractedMetadataGetSerializedSizeFunc get_serialized_size;
 };
 
-struct _ExtractedYUVImage {
+struct _ExtractedYImage {
   ExtractedMetadata parent;
   /* Image plane - 8 bits depth */
   unsigned char ** y;
@@ -32,7 +32,7 @@ struct _ExtractedYUVImage {
 
 static const int EXTRACTED_METADATA_TYPE_SIZE = 1;
 
-static ExtractedMetadata * extracted_yuv_image_deserialize(const char * data, int size);
+static ExtractedMetadata * extracted_y_image_deserialize(const char * data, int size);
 
 /*
  ********************************
@@ -64,8 +64,8 @@ ExtractedMetadata * extracted_metadata_deserialize(const char * data, int size)
 
   switch (type) 
   {
-    case ExtractedMetadataYUVImage:
-      ret = extracted_yuv_image_deserialize(data + EXTRACTED_METADATA_TYPE_SIZE, size - EXTRACTED_METADATA_TYPE_SIZE);
+    case ExtractedMetadataYImage:
+      ret = extracted_y_image_deserialize(data + EXTRACTED_METADATA_TYPE_SIZE, size - EXTRACTED_METADATA_TYPE_SIZE);
       break;
 
     default:
@@ -95,17 +95,17 @@ static void extracted_metadata_init(ExtractedMetadata * metadata,
 
 /*
  ********************************
- * ExtractedYUVImage Public API *
+ * ExtractedYImage Public API *
  ********************************
  */
 
-static void extracted_yuv_image_free(ExtractedMetadata * metadata);
-static void extracted_yuv_image_serialize (ExtractedMetadata * metadata, char * data);
-static int extracted_yuv_image_get_serialized_size(ExtractedMetadata * metadata);
+static void extracted_y_image_free(ExtractedMetadata * metadata);
+static void extracted_y_image_serialize (ExtractedMetadata * metadata, char * data);
+static int extracted_y_image_get_serialized_size(ExtractedMetadata * metadata);
 
-ExtractedYUVImage * extracted_yuv_image_new(int width, int height)
+ExtractedYImage * extracted_y_image_new(int width, int height)
 {
-  ExtractedYUVImage * metadata = malloc(sizeof(ExtractedYUVImage));
+  ExtractedYImage * metadata = malloc(sizeof(ExtractedYImage));
   unsigned char ** y_rows   = malloc(sizeof(unsigned char *) * height);
   unsigned char * y_plane   = malloc(sizeof(unsigned char) * height * width);
   int row_offset            = 0;
@@ -123,15 +123,15 @@ ExtractedYUVImage * extracted_yuv_image_new(int width, int height)
   metadata->y      = y_rows;
   
   extracted_metadata_init((ExtractedMetadata *) metadata,
-                          extracted_yuv_image_free,
-                          extracted_yuv_image_serialize,
-                          extracted_yuv_image_get_serialized_size,
-                          ExtractedMetadataYUVImage);
+                          extracted_y_image_free,
+                          extracted_y_image_serialize,
+                          extracted_y_image_get_serialized_size,
+                          ExtractedMetadataYImage);
 
   return metadata;
 }
 
-unsigned char ** extracted_yuv_image_get_y(ExtractedYUVImage * img)
+unsigned char ** extracted_y_image_get_y(ExtractedYImage * img)
 {
   return img->y;
 }
@@ -139,14 +139,14 @@ unsigned char ** extracted_yuv_image_get_y(ExtractedYUVImage * img)
 
 /*
  ************************************
- * ExtractedYUVImage private functions *
+ * ExtractedYImage private functions *
  ************************************
  */
 
-static void extracted_yuv_image_free(ExtractedMetadata * metadata)
+static void extracted_y_image_free(ExtractedMetadata * metadata)
 {
   /* metadata->y[0] points to the begin of the y plane. Easy to free all data */
-  ExtractedYUVImage * img = (ExtractedYUVImage *) metadata;
+  ExtractedYImage * img = (ExtractedYImage *) metadata;
 
   /* freeing the image plane */
   free(img->y[0]);
@@ -155,15 +155,15 @@ static void extracted_yuv_image_free(ExtractedMetadata * metadata)
   free(img->y);
 }
 
-static ExtractedMetadata * extracted_yuv_image_deserialize(const char * data, int size)
+static ExtractedMetadata * extracted_y_image_deserialize(const char * data, int size)
 {
   uint16_t width;
   uint16_t height;
   int plane_size;
-  ExtractedYUVImage * img = NULL; 
+  ExtractedYImage * img = NULL; 
 
   if (size < (sizeof(uint16_t) * 2)) {
-    printf("extracted_yuv_image_deserialize: invalid serialized ExtractedYUVImage !!!\n");
+    printf("extracted_y_image_deserialize: invalid serialized ExtractedYImage !!!\n");
     return NULL;
   }
 
@@ -180,12 +180,12 @@ static ExtractedMetadata * extracted_yuv_image_deserialize(const char * data, in
   plane_size = width * height * sizeof(unsigned char);
 
   if (size != plane_size) {
-    printf("extracted_yuv_image_deserialize: expected plane_size[%d] but was [%d]!!!\n", size, plane_size);
+    printf("extracted_y_image_deserialize: expected plane_size[%d] but was [%d]!!!\n", size, plane_size);
     return NULL;
   }
 
   /* Lets create a new empty image */
-  img   = extracted_yuv_image_new(width, height);
+  img   = extracted_y_image_new(width, height);
 
   /* lets fill the plane */
   memcpy(img->y[0], data, width * height * sizeof(unsigned char));
@@ -193,9 +193,9 @@ static ExtractedMetadata * extracted_yuv_image_deserialize(const char * data, in
   return (ExtractedMetadata *) img;
 }
 
-static void extracted_yuv_image_serialize (ExtractedMetadata * metadata, char * data)
+static void extracted_y_image_serialize (ExtractedMetadata * metadata, char * data)
 {
-  ExtractedYUVImage * img = (ExtractedYUVImage *) metadata;
+  ExtractedYImage * img = (ExtractedYImage *) metadata;
 
   /* avoid problems with type size and endianness */
   *((uint16_t *) data) = htons(img->width);
@@ -208,9 +208,9 @@ static void extracted_yuv_image_serialize (ExtractedMetadata * metadata, char * 
   memcpy(data, img->y[0], img->width * img->height * sizeof(unsigned char));
 }
 
-static int extracted_yuv_image_get_serialized_size(ExtractedMetadata * metadata)
+static int extracted_y_image_get_serialized_size(ExtractedMetadata * metadata)
 {
-  ExtractedYUVImage * img = (ExtractedYUVImage *) metadata;
+  ExtractedYImage * img = (ExtractedYImage *) metadata;
   return sizeof(uint16_t) + sizeof(uint16_t) + img->width * img->height;
 }
 

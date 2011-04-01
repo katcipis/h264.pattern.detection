@@ -109,9 +109,15 @@ void InterpretSEIMessage(byte* msg, int size, VideoParameters *p_Vid, Slice *pSl
       interpret_user_data_registered_itu_t_t35_info( msg+offset, payload_size, p_Vid );
       break;
     case  SEI_USER_DATA_UNREGISTERED:
-      user_data_parser_unregistered_sei(msg+offset, payload_size);
-      //interpret_user_data_unregistered_info( msg+offset, payload_size, p_Vid );
+    {
+      /* KATCIPIS - lets receive the serialized metadata */
+      byte * serialized_metadata   = NULL;
+      int serialized_metadata_size = 0;
+
+      user_data_parser_unregistered_sei_get_data(msg+offset, payload_size, 
+                                                 &serialized_metadata, &serialized_metadata_size);
       break;
+    }
     case  SEI_RECOVERY_POINT:
       interpret_recovery_point_info( msg+offset, payload_size, p_Vid );
       break;

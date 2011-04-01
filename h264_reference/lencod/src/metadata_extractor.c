@@ -12,7 +12,7 @@ static const char * cascade_filename = "haarcascade_frontalface_alt.xml";
 static CvHaarClassifierCascade * classifier = NULL;
 
 /* OpenCV “work buffer" */
-static CvMemStorage * storage      = NULL;
+static CvMemStorage * storage    = NULL;
 
 /* How big of a jump there is between each scale */
 static const double SCALE_FACTOR = 1.1f;
@@ -116,10 +116,10 @@ ExtractedMetadata ** metadata_extractor_extract_from_y(unsigned char ** y, int w
 
   for( i = 0; i < results->total; i++ ) {
   
-    CvRect* res                  = (CvRect*)cvGetSeqElem( results, i);
-    ExtractedYUVImage * metadata = extracted_yuv_image_new(res->width, res->height);
-    unsigned char ** y_plane     = extracted_yuv_image_get_y(metadata);
-    int metadata_row             = 0;
+    CvRect* res                = (CvRect*)cvGetSeqElem( results, i);
+    ExtractedYImage * metadata = extracted_y_image_new(res->width, res->height);
+    unsigned char ** y_plane   = extracted_y_image_get_y(metadata);
+    int metadata_row           = 0;
    
     /* Copy the object from the original frame */
     for (row = res->y; row < (res->height + res->y); row++) {

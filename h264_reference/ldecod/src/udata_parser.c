@@ -1,7 +1,8 @@
 #include "udata_parser.h"
 #include <stdio.h>
 
-#define UUID_ISO_IEC_OFFSET 16 
+/* 16 bytes - 128bits - According to ITU-T REC 03/2010 - Pag 327 */
+static const int UUID_ISO_IEC_OFFSET = 16;
 
 
 void user_data_parser_unregistered_sei( byte* payload, int size)

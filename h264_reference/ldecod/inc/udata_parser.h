@@ -17,14 +17,14 @@
 
 /*!
  *******************************************************************************
- * Parses a SEI User Data Unregistered message, dumping all its data at stdout.
+ * Parses a SEI User Data Unregistered message and dumps all its data at stdout.
  *
  * @param payload The payload of the SEI message.
  * @param size The size of the payload.
  *
  *******************************************************************************
  */
-void user_data_parser_unregistered_sei(byte* payload, int size);
+void user_data_parser_unregistered_sei_dump(byte* payload, int size);
 
 /*!
  *******************************************************************************
