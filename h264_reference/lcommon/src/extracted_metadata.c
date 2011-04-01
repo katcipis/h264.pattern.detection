@@ -7,6 +7,7 @@
 /* types/struct definition */
 typedef void (*ExtractedMetadataFreeFunc) (ExtractedMetadata *);
 typedef void (*ExtractedMetadataSerializeFunc) (ExtractedMetadata *, char *);
+typedef void (*ExtractedMetadataSaveFunc) (ExtractedMetadata *, const char *);
 typedef int  (*ExtractedMetadataGetSerializedSizeFunc) (ExtractedMetadata *);
 
 typedef enum {
@@ -19,6 +20,7 @@ struct _ExtractedMetadata {
   ExtractedMetadataFreeFunc free;
   ExtractedMetadataSerializeFunc serialize;
   ExtractedMetadataGetSerializedSizeFunc get_serialized_size;
+  ExtractedMetadataSaveFunc save;
 };
 
 struct _ExtractedYImage {
@@ -75,6 +77,11 @@ ExtractedMetadata * extracted_metadata_deserialize(const char * data, int size)
   return ret;
 }
 
+void extracted_metadata_save(ExtractedMetadata * metadata, const char * filename)
+{
+  metadata->save(metadata, filename);
+}
+
 /*
  *********************************
  * ExtractedMetadata Private API *
@@ -84,11 +91,13 @@ static void extracted_metadata_init(ExtractedMetadata * metadata,
                                     ExtractedMetadataFreeFunc free, 
                                     ExtractedMetadataSerializeFunc serialize,
                                     ExtractedMetadataGetSerializedSizeFunc get_serialized_size,
+                                    ExtractedMetadataSaveFunc save,
                                     ExtractedMetadataType type)
 {
   metadata->free                = free;
   metadata->serialize           = serialize;
   metadata->get_serialized_size = get_serialized_size;
+  metadata->save                = save;
   metadata->type                = type;
 }
 
@@ -102,6 +111,7 @@ static void extracted_metadata_init(ExtractedMetadata * metadata,
 static void extracted_y_image_free(ExtractedMetadata * metadata);
 static void extracted_y_image_serialize (ExtractedMetadata * metadata, char * data);
 static int extracted_y_image_get_serialized_size(ExtractedMetadata * metadata);
+static void extracted_y_image_save(ExtractedMetadata * metadata, const char * filename);
 
 ExtractedYImage * extracted_y_image_new(int width, int height)
 {
@@ -126,6 +136,7 @@ ExtractedYImage * extracted_y_image_new(int width, int height)
                           extracted_y_image_free,
                           extracted_y_image_serialize,
                           extracted_y_image_get_serialized_size,
+                          extracted_y_image_save,
                           ExtractedMetadataYImage);
 
   return metadata;
@@ -214,3 +225,7 @@ static int extracted_y_image_get_serialized_size(ExtractedMetadata * metadata)
   return sizeof(uint16_t) + sizeof(uint16_t) + img->width * img->height;
 }
 
+static void extracted_y_image_save(ExtractedMetadata * metadata, const char * filename)
+{
+  ExtractedYImage * img = (ExtractedYImage *) metadata;
+}
