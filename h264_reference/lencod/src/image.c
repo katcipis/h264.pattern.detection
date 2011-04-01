@@ -1190,6 +1190,7 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
       
       /* Insert the serialized metadata on the bitstream as SEI NALU. */
       nalu = user_data_generate_unregistered_sei_nalu(data, size);
+      printf("Writing NALU size[%d]\n", size);
       p_Vid->WriteNALU (p_Vid, nalu);
 
       FreeNALU (nalu);

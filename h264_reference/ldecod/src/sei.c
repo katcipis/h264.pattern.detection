@@ -116,6 +116,8 @@ void InterpretSEIMessage(byte* msg, int size, VideoParameters *p_Vid, Slice *pSl
 
       user_data_parser_unregistered_sei_get_data(msg+offset, payload_size, 
                                                  &serialized_metadata, &serialized_metadata_size);
+
+      printf("UNREGISTERED USERDATA SIZE[%d]\n", serialized_metadata_size);
       break;
     }
     case  SEI_RECOVERY_POINT:

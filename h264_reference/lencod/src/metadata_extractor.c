@@ -149,6 +149,6 @@ ExtractedMetadata ** metadata_extractor_extract_from_y(unsigned char ** y, int w
   cvWaitKey(1000);
   */
 
-  return NULL;
+  return metadata_objs;
 }
 
