@@ -143,12 +143,6 @@ ExtractedMetadata ** metadata_extractor_extract_from_y(unsigned char ** y, int w
   cvReleaseImage(&frame);
   cvReleaseImage(&gray);
 
-  /*
-  cvNamedWindow("frame", 1);
-  cvShowImage("frame", frame);
-  cvWaitKey(1000);
-  */
-
   return metadata_objs;
 }
 

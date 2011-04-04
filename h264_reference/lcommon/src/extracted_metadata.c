@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <cv.h>
+#include <highgui.h>
+
 
 /* types/struct definition */
 typedef void (*ExtractedMetadataFreeFunc) (ExtractedMetadata *);
@@ -227,5 +230,31 @@ static int extracted_y_image_get_serialized_size(ExtractedMetadata * metadata)
 
 static void extracted_y_image_save(ExtractedMetadata * metadata, const char * filename)
 {
+  /* We are going to use OpenCV to save the image to a file */
   ExtractedYImage * img = (ExtractedYImage *) metadata;
+  IplImage * frame      = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 3);
+
+  int row, col;
+  int frame_i = 0;
+  int save_params[3];
+
+  save_params[0] = CV_IMWRITE_JPEG_QUALITY;
+  save_params[1] = 95; /* desired quality , 0 - 100 range */
+  save_params[2] = 0;
+
+
+  /* We must write R G B with the same Y sample. Forming a grayscale image */
+  for (row = 0; row < img->height; row++) {
+
+    for (col = 0; col < img->width; col++) {
+
+      frame->imageData[frame_i]     = img->y[row][col];
+      frame->imageData[frame_i + 1] = img->y[row][col];
+      frame->imageData[frame_i + 2] = img->y[row][col];
+      frame_i += 3;
+    }
+  }
+
+  cvSaveImage(filename, frame, save_params);
+  cvReleaseImage(&frame);
 }
