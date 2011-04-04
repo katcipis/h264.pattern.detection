@@ -42,9 +42,12 @@ else
 STATIC= 
 endif
 
-LIBS=   -lm $(STATIC)
+OPENCV_LIBS=`pkg-config --libs opencv`
+OPENCV_CFLAGS=`pkg-config --cflags opencv`
+
+LIBS=   -lm $(STATIC) $(OPENCV_LIBS)
 CFLAGS=  -std=gnu99 -pedantic -ffloat-store -fno-strict-aliasing -fsigned-char $(STATIC)
-FLAGS=  $(CFLAGS) -Wall -I$(INCDIR) -I$(ADDINCDIR) -D __USE_LARGEFILE64 -D _FILE_OFFSET_BITS=64
+FLAGS=  $(CFLAGS) -Wall -I$(INCDIR) -I$(ADDINCDIR) -D __USE_LARGEFILE64 -D _FILE_OFFSET_BITS=64 $(OPENCV_CFLAGS)
 
 ifeq ($(M32),1)
 FLAGS+=-m32
