@@ -23,6 +23,7 @@
 #include "mbuffer.h"
 #include "parset.h"
 #include "udata_parser.h"
+#include "extracted_metadata.h"
 
 // #define PRINT_BUFFERING_PERIOD_INFO    // uncomment to print buffering period SEI info
 // #define PRINT_PCITURE_TIMING_INFO      // uncomment to print picture timing SEI info
@@ -114,10 +115,29 @@ void InterpretSEIMessage(byte* msg, int size, VideoParameters *p_Vid, Slice *pSl
       byte * serialized_metadata   = NULL;
       int serialized_metadata_size = 0;
 
+      /* static data to build the image filename */
+      static int metadata_count        = 1;
+      static const char * filename_fmt = "extracted_image%d.jpg";
+      static char filename_buffer[512];
+
+      snprintf(filename_buffer, 512, filename_fmt, metadata_count);
+      metadata_count++;
+      /* image filename built */
+
       user_data_parser_unregistered_sei_get_data(msg+offset, payload_size, 
                                                  &serialized_metadata, &serialized_metadata_size);
 
       printf("UNREGISTERED USERDATA SIZE[%d]\n", serialized_metadata_size);
+
+      ExtractedMetadata * metadata = extracted_metadata_deserialize((const char *) serialized_metadata, serialized_metadata_size);
+
+      if (metadata) {
+        printf("METADATA DESERIALIZED WITH SUCCESS !!!\n");
+        /* for now we supose all metadata is a image and save it as .jpg */
+        extracted_metadata_save(metadata, filename_buffer);
+        extracted_metadata_free(metadata);
+      }
+
       break;
     }
     case  SEI_RECOVERY_POINT:
