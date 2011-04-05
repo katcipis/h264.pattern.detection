@@ -5,7 +5,7 @@
 static const int UUID_ISO_IEC_OFFSET = 16;
 
 
-void user_data_parser_unregistered_sei( byte* payload, int size)
+void user_data_parser_unregistered_sei_dump( byte* payload, int size)
 {
   int offset = 0;
   byte payload_byte;

@@ -74,8 +74,7 @@ static int GenerateUserDataSEImessage_rbsp (int id, byte *rbsp, char* sei_messag
         u_v (8,"SEI: user_data_payload_byte",sei_message[i], bitstream);
     }
 
-    /* FIXME we MUST have this zero or the original coded was suposed to zero terminate the msg ? */
-    u_v (8,"SEI: user_data_payload_byte", 0, bitstream);
+    u_v (8,"SEI: user_data_payload_byte", 0, bitstream); 
   }
 
   SODBtoRBSP(bitstream);     // copies the last couple of bits into the byte buffer

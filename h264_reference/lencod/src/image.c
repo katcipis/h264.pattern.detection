@@ -1185,12 +1185,20 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
       char * data             = malloc(size);
       NALU_t * nalu           = NULL;
      
+      /* static data to build the image filename */
+      static int metadata_count    = 1;
+      static const char * name_fmt = "encoded_metadata_%d";
+      static char name_buffer[128];
+
+      snprintf(name_buffer, 128, name_fmt, metadata_count);
+      metadata_count++;
+      extracted_metadata_save(obj, name_buffer);
+
       /* Serialize the metadata */
       extracted_metadata_serialize(obj, data);
       
       /* Insert the serialized metadata on the bitstream as SEI NALU. */
       nalu = user_data_generate_unregistered_sei_nalu(data, size);
-      printf("Writing NALU size[%d]\n", size);
       p_Vid->WriteNALU (p_Vid, nalu);
 
       FreeNALU (nalu);

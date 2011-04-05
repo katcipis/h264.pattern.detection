@@ -120,7 +120,7 @@ ExtractedMetadata ** metadata_extractor_extract_from_y(unsigned char ** y, int w
     ExtractedYImage * metadata = extracted_y_image_new(res->width, res->height);
     unsigned char ** y_plane   = extracted_y_image_get_y(metadata);
     int metadata_row           = 0;
-   
+
     /* Copy the object from the original frame */
     for (row = res->y; row < (res->height + res->y); row++) {
 

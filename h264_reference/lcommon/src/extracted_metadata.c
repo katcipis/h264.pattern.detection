@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <cv.h>
-#include <highgui.h>
 
 
 /* types/struct definition */
@@ -80,9 +78,9 @@ ExtractedMetadata * extracted_metadata_deserialize(const char * data, int size)
   return ret;
 }
 
-void extracted_metadata_save(ExtractedMetadata * metadata, const char * filename)
+void extracted_metadata_save(ExtractedMetadata * metadata, const char * name)
 {
-  metadata->save(metadata, filename);
+  metadata->save(metadata, name);
 }
 
 /*
@@ -114,7 +112,7 @@ static void extracted_metadata_init(ExtractedMetadata * metadata,
 static void extracted_y_image_free(ExtractedMetadata * metadata);
 static void extracted_y_image_serialize (ExtractedMetadata * metadata, char * data);
 static int extracted_y_image_get_serialized_size(ExtractedMetadata * metadata);
-static void extracted_y_image_save(ExtractedMetadata * metadata, const char * filename);
+static void extracted_y_image_save(ExtractedMetadata * metadata, const char * name);
 
 ExtractedYImage * extracted_y_image_new(int width, int height)
 {
@@ -193,8 +191,9 @@ static ExtractedMetadata * extracted_y_image_deserialize(const char * data, int 
 
   plane_size = width * height * sizeof(unsigned char);
 
-  if (size != plane_size) {
-    printf("extracted_y_image_deserialize: expected plane_size[%d] but was [%d]!!!\n", size, plane_size);
+  if (size < plane_size) {
+    /* For some kind of reasom the JM software insert a byte on the end of the SEI message. */
+    printf("extracted_y_image_deserialize: expected plane_size[%d] but was [%d]!!!\n", plane_size, size);
     return NULL;
   }
 
@@ -225,36 +224,31 @@ static void extracted_y_image_serialize (ExtractedMetadata * metadata, char * da
 static int extracted_y_image_get_serialized_size(ExtractedMetadata * metadata)
 {
   ExtractedYImage * img = (ExtractedYImage *) metadata;
-  return sizeof(uint16_t) + sizeof(uint16_t) + img->width * img->height;
+  return sizeof(uint16_t) + sizeof(uint16_t) + (img->width * img->height * sizeof(unsigned char));
 }
 
-static void extracted_y_image_save(ExtractedMetadata * metadata, const char * filename)
+static void extracted_y_image_save(ExtractedMetadata * metadata, const char * name)
 {
-  /* We are going to use OpenCV to save the image to a file */
-  ExtractedYImage * img = (ExtractedYImage *) metadata;
-  IplImage * frame      = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 3);
+  /* We are not going to use OpenCV to save the image to a file because he messes 
+     up some of the images while gimp can open the raw images easily */
+  ExtractedYImage * img     = (ExtractedYImage *) metadata;
+  const char filename_fmt[] = "%s_y_image_width%d_height%d.y";
+  char filename_buffer[256];
+  FILE * output = NULL;
+  int row;
 
-  int row, col;
-  int frame_i = 0;
-  int save_params[3];
-
-  save_params[0] = CV_IMWRITE_JPEG_QUALITY;
-  save_params[1] = 95; /* desired quality , 0 - 100 range */
-  save_params[2] = 0;
-
+  snprintf(filename_buffer, 256, filename_fmt, name, img->width, img->height);
+  output = fopen(filename_buffer, "w");
 
   /* We must write R G B with the same Y sample. Forming a grayscale image */
   for (row = 0; row < img->height; row++) {
 
-    for (col = 0; col < img->width; col++) {
-
-      frame->imageData[frame_i]     = img->y[row][col];
-      frame->imageData[frame_i + 1] = img->y[row][col];
-      frame->imageData[frame_i + 2] = img->y[row][col];
-      frame_i += 3;
+    size_t written = fwrite(img->y[row], sizeof(unsigned char), img->width, output);
+    if (written != img->width) {
+      printf("Error writing output file[%s], written[%d] but expected[%d] !!!", filename_buffer, written, img->width);
+      break;
     }
   }
 
-  cvSaveImage(filename, frame, save_params);
-  cvReleaseImage(&frame);
+  fclose(output);
 }

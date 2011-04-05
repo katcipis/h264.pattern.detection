@@ -85,11 +85,11 @@ ExtractedMetadata * extracted_metadata_deserialize(const char * data, int size);
  * Save this ExtractedMetadata object on a file. 
  *
  * @param metadata The metadata to be saved.
- * @param filename Filename where the metadata will be saved.
+ * @param name Name of the metadata, will be used to build the filename.
  *
  *******************************************************************************
  */
-void extracted_metadata_save(ExtractedMetadata * metadata, const char * filename);
+void extracted_metadata_save(ExtractedMetadata * metadata, const char * name);
 
 /*!
  *******************************************************************************
