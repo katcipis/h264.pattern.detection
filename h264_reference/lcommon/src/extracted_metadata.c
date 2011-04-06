@@ -233,12 +233,17 @@ static void extracted_y_image_save(ExtractedMetadata * metadata, const char * na
      up some of the images while gimp can open the raw images easily */
   ExtractedYImage * img     = (ExtractedYImage *) metadata;
   const char filename_fmt[] = "%s_y_image_width%d_height%d.y";
-  char filename_buffer[256];
-  FILE * output = NULL;
+  char * filename_buffer    = NULL;
+  FILE * output             = NULL;
   int row;
 
-  snprintf(filename_buffer, 256, filename_fmt, name, img->width, img->height);
+  if (asprintf(&filename_buffer, filename_fmt, name, img->width, img->height) == -1) {
+    printf("Error allocating memory for filename !!!!\n");
+    return;
+  }
+
   output = fopen(filename_buffer, "w");
+  free(filename_buffer);
 
   /* We must write R G B with the same Y sample. Forming a grayscale image */
   for (row = 0; row < img->height; row++) {

@@ -15,6 +15,7 @@
 #include "contributors.h"
 
 #include <math.h>
+#include <stdio.h>
 #include "global.h"
 #include "memalloc.h"
 #include "sei.h"
@@ -124,14 +125,17 @@ void InterpretSEIMessage(byte* msg, int size, VideoParameters *p_Vid, Slice *pSl
         /* static data to build the image filename */
         static int metadata_count        = 1;
         static const char * name_fmt = "decoded_metadata_%d";
-        static char name_buffer[128];
+        char * name_buffer = NULL;
 
-        snprintf(name_buffer, 128, name_fmt, metadata_count);
+        if (asprintf(&name_buffer, name_fmt, metadata_count) == -1) {
+          error("Error allocating memory for name_buffer !!!!", 500);
+        }
         metadata_count++;
         /* image filename built */
 
         extracted_metadata_save(metadata, name_buffer);
         extracted_metadata_free(metadata);
+        free(name_buffer);
       }
 
       break;

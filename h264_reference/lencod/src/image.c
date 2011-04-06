@@ -29,6 +29,7 @@
 
 #include <math.h>
 #include <time.h>
+#include <stdio.h>
 
 #include "global.h"
 
@@ -1188,9 +1189,12 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
       /* static data to build the image filename */
       static int metadata_count    = 1;
       static const char * name_fmt = "encoded_metadata_%d";
-      static char name_buffer[128];
+      char * name_buffer           = NULL;
 
-      snprintf(name_buffer, 128, name_fmt, metadata_count);
+      if (asprintf(&name_buffer, name_fmt, metadata_count) == -1) {
+        error("Error allocating memory for name_buffer !!!", 500);
+      }
+
       metadata_count++;
       extracted_metadata_save(obj, name_buffer);
 
@@ -1202,6 +1206,7 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
       p_Vid->WriteNALU (p_Vid, nalu);
 
       FreeNALU (nalu);
+      free(name_buffer);
       free(data);
       tmp++;
     }
