@@ -1186,18 +1186,6 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
       char * data             = malloc(size);
       NALU_t * nalu           = NULL;
      
-      /* static data to build the image filename */
-      static int metadata_count    = 1;
-      static const char * name_fmt = "encoded_metadata_%d";
-      char * name_buffer           = NULL;
-
-      if (asprintf(&name_buffer, name_fmt, metadata_count) == -1) {
-        error("Error allocating memory for name_buffer !!!", 500);
-      }
-
-      metadata_count++;
-      extracted_metadata_save(obj, name_buffer);
-
       /* Serialize the metadata */
       extracted_metadata_serialize(obj, data);
       
@@ -1206,7 +1194,6 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
       p_Vid->WriteNALU (p_Vid, nalu);
 
       FreeNALU (nalu);
-      free(name_buffer);
       free(data);
       tmp++;
     }
