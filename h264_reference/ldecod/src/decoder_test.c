@@ -230,7 +230,6 @@ int main(int argc, char **argv)
     {
       //process the decoded picture, output or display;
 
-      /* KATCIPIS seems to be a good place to draw the bounding box !!! */
       iFramesOutput += WriteOneFrame(pDecPicList, hFileDecOutput0, hFileDecOutput1, 0);
       iFramesDecoded++;
     }
@@ -243,7 +242,6 @@ int main(int argc, char **argv)
 
   iRet = FinitDecoder(&pDecPicList);
 
-  /* KATCIPIS seems to be a good place to draw the last bounding box !!! */
   iFramesOutput += WriteOneFrame(pDecPicList, hFileDecOutput0, hFileDecOutput1 , 1);
   iRet = CloseDecoder();
 

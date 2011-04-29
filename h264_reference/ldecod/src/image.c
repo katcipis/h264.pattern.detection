@@ -1911,6 +1911,23 @@ void exit_picture(VideoParameters *p_Vid, StorablePicture **dec_picture)
 
   chroma_format_idc = (*dec_picture)->chroma_format_idc;
 
+  /* KATCIPIS - This seems the best place to do some process on the decoded frame, right before it is copied to DPB. */
+
+  if (p_Vid->current_frame_metadata) {
+      /* Lets process and free all metadata relative to the current frame */
+      ExtractedMetadata * metadata = p_Vid->current_frame_metadata;
+      while (metadata) {
+
+          extracted_metadata_free(metadata);
+          metadata++;
+      }
+     
+      /* Next frame does not have a metadata yet */
+      p_Vid->current_frame_metadata = NULL;
+  }
+
+  /* KATCIPIS - end of metadata processing on the decoded frame. */ 
+
   store_picture_in_dpb(p_Vid->p_Dpb, *dec_picture);
   *dec_picture=NULL;
 

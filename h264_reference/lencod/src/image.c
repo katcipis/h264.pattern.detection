@@ -1178,16 +1178,14 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
                                                                                        p_Vid->imgData.format.height[0]);
 
   if (metadata) {
-    ExtractedMetadata ** tmp = metadata;
 
-    while (*tmp) {
-      ExtractedMetadata * obj = *tmp;
-      int size                = extracted_metadata_get_serialized_size(obj);
+    while (*metadata) {
+      int size                = extracted_metadata_get_serialized_size(*metadata);
       char * data             = malloc(size);
       NALU_t * nalu           = NULL;
      
       /* Serialize the metadata */
-      extracted_metadata_serialize(obj, data);
+      extracted_metadata_serialize(*metadata, data);
       
       /* Insert the serialized metadata on the bitstream as SEI NALU. */
       nalu = user_data_generate_unregistered_sei_nalu(data, size);
@@ -1195,10 +1193,9 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
 
       FreeNALU (nalu);
       free(data);
-      tmp++;
+      extracted_metadata_free(*metadata);
+      metadata++;
     }
-
-    metadata_extractor_free_all_extracted_metadata(metadata);
   }
 
   /* KATCIPIS end of metadata extracting */

@@ -38,18 +38,6 @@ static void init_haar_facilities()
   cvClearMemStorage(storage);
 }
 
-void metadata_extractor_free_all_extracted_metadata(ExtractedMetadata ** metadata_objs)
-{
-  ExtractedMetadata ** tmp = metadata_objs;
-
-  while (*tmp) {
-    extracted_metadata_free(*tmp);
-    ++tmp;
-  }
-
-  free(metadata_objs);
-}
-
 /*!
  *************************************************************************************
  * \brief

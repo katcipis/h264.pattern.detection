@@ -38,15 +38,4 @@ ExtractedMetadata ** metadata_extractor_extract_from_y(unsigned char ** y,
                                                        int width, 
                                                        int height);
 
-/*!
- *****************************************************************************
- * Frees a NULL terminated array of ExtractedMetadata objects.
- * It will free each object and the array itself.
- *
- * @param metadata_objs The NULL terminated array of ExtractedMetadata objects.
- *
- *****************************************************************************
- */
-void metadata_extractor_free_all_extracted_metadata(ExtractedMetadata ** metadata_objs);
-
 #endif
