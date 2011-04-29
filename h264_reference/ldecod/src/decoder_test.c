@@ -229,6 +229,8 @@ int main(int argc, char **argv)
     if(iRet==DEC_EOS || iRet==DEC_SUCCEED)
     {
       //process the decoded picture, output or display;
+
+      /* KATCIPIS seems to be a good place to draw the bounding box !!! */
       iFramesOutput += WriteOneFrame(pDecPicList, hFileDecOutput0, hFileDecOutput1, 0);
       iFramesDecoded++;
     }
@@ -240,6 +242,8 @@ int main(int argc, char **argv)
   }while((iRet == DEC_SUCCEED) && ((p_Dec->p_Inp->iDecFrmNum==0) || (iFramesDecoded<p_Dec->p_Inp->iDecFrmNum)));
 
   iRet = FinitDecoder(&pDecPicList);
+
+  /* KATCIPIS seems to be a good place to draw the last bounding box !!! */
   iFramesOutput += WriteOneFrame(pDecPicList, hFileDecOutput0, hFileDecOutput1 , 1);
   iRet = CloseDecoder();
 

@@ -123,7 +123,7 @@ void InterpretSEIMessage(byte* msg, int size, VideoParameters *p_Vid, Slice *pSl
 
       if (metadata) {
         /* static data to build the image filename */
-        static int metadata_count        = 1;
+        static int metadata_count    = 1;
         static const char * name_fmt = "decoded_metadata_%d";
         char * name_buffer = NULL;
 
@@ -137,6 +137,7 @@ void InterpretSEIMessage(byte* msg, int size, VideoParameters *p_Vid, Slice *pSl
         extracted_metadata_free(metadata);
         free(name_buffer);
       }
+      /* KATCIPIS - ended receiving the serialized metadata */
 
       break;
     }
