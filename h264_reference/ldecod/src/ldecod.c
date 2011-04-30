@@ -164,6 +164,9 @@ static void alloc_video_params( VideoParameters **p_Vid)
   (*p_Vid)->nalu = AllocNALU(MAX_CODED_FRAME_SIZE);
   (*p_Vid)->pDecOuputPic = (DecodedPicList *)calloc(1, sizeof(DecodedPicList));
   (*p_Vid)->pNextPPS = AllocPPS();
+
+  /* KATCIPIS this is the best place to guarantee that metadata array is initialized with NULL */
+  (*p_Vid)->current_frame_metadata = NULL;
 }
 
 

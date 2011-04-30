@@ -1,5 +1,6 @@
 #include "extracted_metadata.h"
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -8,7 +9,7 @@
 /* types/struct definition */
 typedef void (*ExtractedMetadataFreeFunc) (ExtractedMetadata *);
 typedef void (*ExtractedMetadataSerializeFunc) (ExtractedMetadata *, char *);
-typedef void (*ExtractedMetadataSaveFunc) (ExtractedMetadata *, const char *);
+typedef void (*ExtractedMetadataSaveFunc) (ExtractedMetadata *, int);
 typedef int  (*ExtractedMetadataGetSerializedSizeFunc) (ExtractedMetadata *);
 
 typedef enum {
@@ -78,9 +79,9 @@ ExtractedMetadata * extracted_metadata_deserialize(const char * data, int size)
   return ret;
 }
 
-void extracted_metadata_save(ExtractedMetadata * metadata, const char * name)
+void extracted_metadata_save(ExtractedMetadata * metadata, int fd)
 {
-  metadata->save(metadata, name);
+  metadata->save(metadata, fd);
 }
 
 /*
@@ -112,7 +113,7 @@ static void extracted_metadata_init(ExtractedMetadata * metadata,
 static void extracted_y_image_free(ExtractedMetadata * metadata);
 static void extracted_y_image_serialize (ExtractedMetadata * metadata, char * data);
 static int extracted_y_image_get_serialized_size(ExtractedMetadata * metadata);
-static void extracted_y_image_save(ExtractedMetadata * metadata, const char * name);
+static void extracted_y_image_save(ExtractedMetadata * metadata, int fd);
 
 ExtractedYImage * extracted_y_image_new(int width, int height)
 {
@@ -227,33 +228,21 @@ static int extracted_y_image_get_serialized_size(ExtractedMetadata * metadata)
   return sizeof(uint16_t) + sizeof(uint16_t) + (img->width * img->height * sizeof(unsigned char));
 }
 
-static void extracted_y_image_save(ExtractedMetadata * metadata, const char * name)
+static void extracted_y_image_save(ExtractedMetadata * metadata, int fd)
 {
   /* We are not going to use OpenCV to save the image to a file because he messes 
      up some of the images while gimp can open the raw images easily */
   ExtractedYImage * img     = (ExtractedYImage *) metadata;
-  const char filename_fmt[] = "%s_y_image_width%d_height%d.y";
-  char * filename_buffer    = NULL;
-  FILE * output             = NULL;
   int row;
-
-  if (asprintf(&filename_buffer, filename_fmt, name, img->width, img->height) == -1) {
-    printf("Error allocating memory for filename !!!!\n");
-    return;
-  }
-
-  output = fopen(filename_buffer, "w");
-  free(filename_buffer);
 
   /* We must write R G B with the same Y sample. Forming a grayscale image */
   for (row = 0; row < img->height; row++) {
-
-    size_t written = fwrite(img->y[row], sizeof(unsigned char), img->width, output);
-    if (written != img->width) {
-      printf("Error writing output file[%s], written[%d] but expected[%d] !!!", filename_buffer, written, img->width);
+    size_t count   = sizeof(unsigned char) * img->width;
+    size_t written = write(fd, img->y[row], count);
+    
+    if (written != count) {
+      printf("Error writing output file fd[%d], written[%d] but expected[%d] !!!", fd, written, count);
       break;
     }
   }
-
-  fclose(output);
 }

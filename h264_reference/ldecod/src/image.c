@@ -1914,13 +1914,9 @@ void exit_picture(VideoParameters *p_Vid, StorablePicture **dec_picture)
   /* KATCIPIS - This seems the best place to do some process on the decoded frame, right before it is copied to DPB. */
 
   if (p_Vid->current_frame_metadata) {
-      /* Lets process and free all metadata relative to the current frame */
-      ExtractedMetadata ** metadata = p_Vid->current_frame_metadata;
-      while (*metadata) {
-
-          extracted_metadata_free(*metadata);
-          metadata++;
-      }
+      /* Lets process and free the metadata relative to the current frame */
+      extracted_metadata_save(p_Vid->current_frame_metadata, 1);
+      extracted_metadata_free(p_Vid->current_frame_metadata);
      
       /* Next frame does not have a metadata yet */
       p_Vid->current_frame_metadata = NULL;

@@ -119,24 +119,13 @@ void InterpretSEIMessage(byte* msg, int size, VideoParameters *p_Vid, Slice *pSl
       user_data_parser_unregistered_sei_get_data(msg+offset, payload_size, 
                                                  &serialized_metadata, &serialized_metadata_size);
 
-      ExtractedMetadata * metadata = extracted_metadata_deserialize((const char *) serialized_metadata, serialized_metadata_size);
-
-      if (metadata) {
-        /* static data to build the image filename */
-        static int metadata_count    = 1;
-        static const char * name_fmt = "decoded_metadata_%d";
-        char * name_buffer = NULL;
-
-        if (asprintf(&name_buffer, name_fmt, metadata_count) == -1) {
-          error("Error allocating memory for name_buffer !!!!", 500);
-        }
-        metadata_count++;
-        /* image filename built */
-
-        extracted_metadata_save(metadata, name_buffer);
-        extracted_metadata_free(metadata);
-        free(name_buffer);
+      if (p_Vid->current_frame_metadata) {
+          printf("InterpretSEIMessage: WARNING: current frame metadata is not NULL, overwriting with a new one !!!\n");
+          extracted_metadata_free(p_Vid->current_frame_metadata);
+          p_Vid->current_frame_metadata = NULL;
       }
+
+      p_Vid->current_frame_metadata = extracted_metadata_deserialize((const char *) serialized_metadata, serialized_metadata_size);
       /* KATCIPIS - ended receiving the serialized metadata */
 
       break;
