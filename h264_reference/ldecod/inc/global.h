@@ -42,6 +42,7 @@
 #include "frame.h"
 #include "distortion.h"
 #include "io_video.h"
+#include "extracted_metadata.h"
 
 typedef struct bit_stream Bitstream;
 
@@ -834,7 +835,7 @@ typedef struct video_par
   pic_parameter_set_rbsp_t *pNextPPS;
 
   /* KATCIPIS - current frame metadata. */
-  ExtractedMetadata * current_frame_metadata;
+  ExtractedMetadata ** current_frame_metadata;
 } VideoParameters;
 
 // signal to noise ratio parameters

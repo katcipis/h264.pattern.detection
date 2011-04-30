@@ -1915,10 +1915,10 @@ void exit_picture(VideoParameters *p_Vid, StorablePicture **dec_picture)
 
   if (p_Vid->current_frame_metadata) {
       /* Lets process and free all metadata relative to the current frame */
-      ExtractedMetadata * metadata = p_Vid->current_frame_metadata;
-      while (metadata) {
+      ExtractedMetadata ** metadata = p_Vid->current_frame_metadata;
+      while (*metadata) {
 
-          extracted_metadata_free(metadata);
+          extracted_metadata_free(*metadata);
           metadata++;
       }
      
