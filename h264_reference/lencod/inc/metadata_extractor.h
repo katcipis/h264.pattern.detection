@@ -22,20 +22,35 @@
 
 
 /*!
- *****************************************************************************
- * Extracts metadata from the Y plane.
+ *********************************************************************************
+ * Extracts the entire raw interest object as a metadata from the Y plane.
  *
  * @param y The luma plane, y[i][j] where i is the row and j the column.
  * @param width The luma plane width.
  * @param height The luma plane height.
  *
- * @return A NULL terminated array of Metadata objects containing metadata 
- *         information or NULL if no usefull metadata is found on the image.
+ * @return The metadata or NULL if the interest object is not foundd on the frame.
  *
- *****************************************************************************
+ *********************************************************************************
  */
-ExtractedMetadata ** metadata_extractor_extract_from_y(unsigned char ** y, 
-                                                       int width, 
-                                                       int height);
+ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned char ** y, 
+                                                          int width, 
+                                                          int height);
+
+/*!
+ *********************************************************************************
+ * Extracts the interest object bounding box as a metadata from the Y plane.
+ *
+ * @param y The luma plane, y[i][j] where i is the row and j the column.
+ * @param width The luma plane width.
+ * @param height The luma plane height.
+ *
+ * @return The metadata or NULL if the interest object is not foundd on the frame.
+ *
+ *********************************************************************************
+ */
+ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned char ** y,
+                                                                   int width,
+                                                                   int height);
 
 #endif

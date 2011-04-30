@@ -1634,7 +1634,7 @@ process_nalu:
       }
       break;
     case NALU_TYPE_SEI:
-      printf ("read_new_slice: Found NALU_TYPE_SEI, len %d\n", nalu->len);
+      /* printf ("read_new_slice: Found NALU_TYPE_SEI, len %d\n", nalu->len); */
       InterpretSEIMessage(nalu->buf,nalu->len,p_Vid, currSlice);
       break;
     case NALU_TYPE_PPS:

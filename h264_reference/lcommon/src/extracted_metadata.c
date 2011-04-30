@@ -1,9 +1,9 @@
 #include "extracted_metadata.h"
-#include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <stdio.h>
 
 
 /* types/struct definition */
@@ -14,7 +14,8 @@ typedef int  (*ExtractedMetadataGetSerializedSizeFunc) (ExtractedMetadata *);
 
 typedef enum {
   /* 1 byte only */
-  ExtractedMetadataYImage = 0x01
+  ExtractedMetadataYImage            = 0x01,
+  ExtractedMetadataObjectBoundingBox = 0x02
 } ExtractedMetadataType;
 
 struct _ExtractedMetadata {
@@ -34,9 +35,19 @@ struct _ExtractedYImage {
   uint16_t height;
 };
 
+struct _ExtractedObjectBoundingBox {
+  ExtractedMetadata parent;
+  uint32_t id;
+  uint16_t x;
+  uint16_t y;
+  uint16_t width;
+  uint16_t height;
+};
+
 static const int EXTRACTED_METADATA_TYPE_SIZE = 1;
 
 static ExtractedMetadata * extracted_y_image_deserialize(const char * data, int size);
+static ExtractedMetadata * extracted_object_bounding_box_deserialize(const char * data, int size);
 
 /*
  ********************************
@@ -72,6 +83,9 @@ ExtractedMetadata * extracted_metadata_deserialize(const char * data, int size)
       ret = extracted_y_image_deserialize(data + EXTRACTED_METADATA_TYPE_SIZE, size - EXTRACTED_METADATA_TYPE_SIZE);
       break;
 
+    case ExtractedMetadataObjectBoundingBox:
+      ret = extracted_object_bounding_box_deserialize(data + EXTRACTED_METADATA_TYPE_SIZE, size - EXTRACTED_METADATA_TYPE_SIZE);
+      break;
     default:
       printf("extracted_metadata_deserialize: cant find the extracted metadata type !!!\n");
   }
@@ -101,6 +115,129 @@ static void extracted_metadata_init(ExtractedMetadata * metadata,
   metadata->get_serialized_size = get_serialized_size;
   metadata->save                = save;
   metadata->type                = type;
+}
+
+/*
+ *****************************************
+ * ExtractedObjectBoundingBox Public API *
+ *****************************************
+ */
+
+static void extracted_object_bounding_box_free(ExtractedMetadata * metadata);
+static void extracted_object_bounding_box_serialize (ExtractedMetadata * metadata, char * data);
+static int extracted_object_bounding_box_get_serialized_size(ExtractedMetadata * metadata);
+static void extracted_object_bounding_box_save(ExtractedMetadata * metadata, int fd);
+
+ExtractedObjectBoundingBox * extracted_object_bounding_box_new(int x, int y, int width, int height)
+{
+    static uint32_t bounding_box_id           = 0;
+    ExtractedObjectBoundingBox * bounding_box = malloc(sizeof(ExtractedObjectBoundingBox));
+
+    bounding_box->id         = bounding_box_id;
+    bounding_box->x = x;
+    bounding_box->y = y;
+    bounding_box->width      = width;
+    bounding_box->height     = height;
+
+    extracted_metadata_init((ExtractedMetadata *) bounding_box,
+                             extracted_object_bounding_box_free,
+                             extracted_object_bounding_box_serialize,
+                             extracted_object_bounding_box_get_serialized_size,
+                             extracted_object_bounding_box_save,
+                             ExtractedMetadataObjectBoundingBox);
+
+    bounding_box_id++;
+    return bounding_box;
+}
+
+
+/*
+ ************************************
+ * ExtractedYImage private functions *
+ ************************************
+ */
+
+static void extracted_object_bounding_box_free(ExtractedMetadata * metadata)
+{
+    free(metadata);
+}
+
+static void extracted_object_bounding_box_serialize (ExtractedMetadata * metadata, char * data)
+{
+    ExtractedObjectBoundingBox * bounding_box = (ExtractedObjectBoundingBox *) metadata;
+   
+    *((uint32_t *) data) = htons(bounding_box->id);
+    data += sizeof(uint32_t);
+
+    *((uint16_t *) data) = htons(bounding_box->x);
+    data += sizeof(uint16_t);
+
+    *((uint16_t *) data) = htons(bounding_box->y);
+    data += sizeof(uint16_t);
+
+    *((uint16_t *) data) = htons(bounding_box->width);
+    data += sizeof(uint16_t);
+
+    *((uint16_t *) data) = htons(bounding_box->height);
+    data += sizeof(uint16_t);
+}
+
+static ExtractedMetadata * extracted_object_bounding_box_deserialize(const char * data, int size)
+{
+  
+  uint16_t width;
+  uint16_t height;
+  uint16_t x;
+  uint16_t y;
+  uint32_t id;
+
+  /* Dont need the actual object to know the serialized size (fixed size). Not true for all objects */
+  if (size < extracted_object_bounding_box_get_serialized_size(NULL)) {
+    printf("extracted_object_bounding_box_deserialize: invalid serialized ExtractedObjectBoundingBox !!!\n");
+    return NULL;
+  }
+
+  /* avoid problems with type size and endianness */
+  id = ntohs(*((uint32_t *) data));
+  data += sizeof(uint32_t);
+
+  x = ntohs(((uint16_t *) data)[0]);
+  y = ntohs(((uint16_t *) data)[1]);
+  width = ntohs(((uint16_t *) data)[2]);
+  height = ntohs(((uint16_t *) data)[3]);
+
+  return (ExtractedMetadata *) extracted_object_bounding_box_new(x, y, width, height);
+}
+
+static int extracted_object_bounding_box_get_serialized_size(ExtractedMetadata * metadata)
+{
+    return sizeof(uint32_t) + sizeof(uint16_t) * 4;
+}
+
+static void extracted_object_bounding_box_save(ExtractedMetadata * metadata, int fd)
+{
+    ExtractedObjectBoundingBox * bounding_box = (ExtractedObjectBoundingBox *) metadata;
+    char * message = NULL;
+    size_t written = 0;
+    size_t message_size = 0;
+
+    if (asprintf(&message, "Object id[%u] x[%u] y[%u] width[%u] height[%u]\n", 
+             bounding_box->id, 
+             bounding_box->x, 
+             bounding_box->y, 
+             bounding_box->width, 
+             bounding_box->height) == -1) {
+        printf("extracted_object_bounding_box_save: ERROR ALLOCATING MESSAGE !!!\n");
+        return;
+    }
+
+    message_size = strlen(message);
+    written = write(fd, message, message_size);
+
+    if (written != message_size) {
+        printf("extracted_object_bounding_box_save: WARNING, expected to write[%d] but written only [%d]", message_size, written);
+    }
+    free(message);
 }
 
 
@@ -166,6 +303,8 @@ static void extracted_y_image_free(ExtractedMetadata * metadata)
 
   /* freeing the rows array */
   free(img->y);
+
+  free(img);
 }
 
 static ExtractedMetadata * extracted_y_image_deserialize(const char * data, int size)

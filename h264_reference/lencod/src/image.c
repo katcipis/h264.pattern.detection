@@ -1171,34 +1171,30 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
 
   process_image(p_Vid, p_Inp);
 
-  /*  KATCIPIS - This sounds like a good place to process the raw Y imgData. */
 
-  ExtractedMetadata ** metadata = metadata_extractor_extract_from_y((unsigned char **) p_Vid->imgData.frm_data[0],
-                                                                                       p_Vid->imgData.format.width[0],
-                                                                                       p_Vid->imgData.format.height[0]);
+  /*  KATCIPIS - This sounds like a good place to process the raw Y imgData. */
+  ExtractedMetadata * metadata = metadata_extractor_extract_object_bounding_box((unsigned char **) p_Vid->imgData.frm_data[0],
+                                                                                 p_Vid->imgData.format.width[0],
+                                                                                 p_Vid->imgData.format.height[0]);
 
   if (metadata) {
-
-    while (*metadata) {
-      int size                = extracted_metadata_get_serialized_size(*metadata);
-      char * data             = malloc(size);
-      NALU_t * nalu           = NULL;
+    int size                = extracted_metadata_get_serialized_size(metadata);
+    char * data             = malloc(size);
+    NALU_t * nalu           = NULL;
      
-      /* Serialize the metadata */
-      extracted_metadata_serialize(*metadata, data);
+    /* Serialize the metadata */
+    extracted_metadata_serialize(metadata, data);
       
-      /* Insert the serialized metadata on the bitstream as SEI NALU. */
-      nalu = user_data_generate_unregistered_sei_nalu(data, size);
-      p_Vid->WriteNALU (p_Vid, nalu);
+    /* Insert the serialized metadata on the bitstream as SEI NALU. */
+    nalu = user_data_generate_unregistered_sei_nalu(data, size);
+    p_Vid->WriteNALU (p_Vid, nalu);
 
-      FreeNALU (nalu);
-      free(data);
-      extracted_metadata_free(*metadata);
-      metadata++;
-    }
+    FreeNALU (nalu);
+    free(data);
+    extracted_metadata_free(metadata);
   }
-
   /* KATCIPIS end of metadata extracting */
+
 
   pad_borders (p_Inp->output, p_Vid->width, p_Vid->height, p_Vid->width_cr, p_Vid->height_cr, p_Vid->imgData.frm_data);
 

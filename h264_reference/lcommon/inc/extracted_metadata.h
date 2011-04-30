@@ -13,9 +13,25 @@
 #ifndef EXTRACTED_METADATA_H
 #define EXTRACTED_METADATA_H
 
-
 typedef struct _ExtractedYImage ExtractedYImage;
 typedef struct _ExtractedMetadata ExtractedMetadata;
+typedef struct _ExtractedObjectBoundingBox ExtractedObjectBoundingBox;
+
+/* ExtractedObjectBoundingBox API */
+
+/*!
+ *******************************************************************************
+ * Creates a new extracted image, the image only has the luma plane (Y).
+ *
+ * @param x The x coordinate of the bounding box.
+ * @param y The y coordinate of the bounding box.
+ * @param width The width of the bounding box.
+ * @param height The height of the bounding box.
+ * @return The newly allocated ExtractedObjectBoundingBox object.
+ *
+ *******************************************************************************
+ */
+ExtractedObjectBoundingBox * extracted_object_bounding_box_new(int x, int y, int width, int height);
 
 /* ExtractedYImage API */
 

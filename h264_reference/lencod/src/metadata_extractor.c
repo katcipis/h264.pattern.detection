@@ -38,25 +38,12 @@ static void init_haar_facilities()
   cvClearMemStorage(storage);
 }
 
-/*!
- *************************************************************************************
- * \brief
- *    Function body for extract metadata from the y image plane.
- *
- * \return
- *    A ExtractedMetadata object array (NULL terminated) or NULL in case no metadata is extracted.
- *
- *************************************************************************************
- */
-ExtractedMetadata ** metadata_extractor_extract_from_y(unsigned char ** y, int width, int height)
-{
-  /* First we must convert the Y luma plane to BGR and them to grayscale. 
-     On grayscale Y = R = G = B. Pretty simple to convert. */
 
+static CvRect* metadata_extractor_search_for_object_of_interest(unsigned char ** y, int width, int height)
+{
   IplImage * frame                   = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
   IplImage * gray                    = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
   CvSeq* results                     = NULL;
-  ExtractedMetadata ** metadata_objs = NULL;
 
   int frame_i = 0;
   int row     = 0;
@@ -82,55 +69,84 @@ ExtractedMetadata ** metadata_extractor_extract_from_y(unsigned char ** y, int w
      these differences might be skewed by overall lighting or exposure of the test images. */
   cvEqualizeHist(gray, gray);
 
- 
+
   /* Lets start detection */
   init_haar_facilities();
 
-  results =  cvHaarDetectObjects (gray, 
-                                  classifier, 
-                                  storage, 
-                                  SCALE_FACTOR, 
-                                  MIN_NEIGHBORS, 
-                                  CV_HAAR_DO_CANNY_PRUNING, /* skip flat regions */ 
+  results =  cvHaarDetectObjects (gray,
+                                  classifier,
+                                  storage,
+                                  SCALE_FACTOR,
+                                  MIN_NEIGHBORS,
+                                  CV_HAAR_DO_CANNY_PRUNING, /* skip flat regions */
                                   MIN_SIZE);
-
-  if (results && (results->total <= 0) ) {
-      return NULL;
-  }
-
-  metadata_objs = malloc(sizeof(ExtractedMetadata *) * (results->total + 1));
-
-  /* On this case we will sent the grayscale found object as metadata (uncompressed) */
-
-  for( i = 0; i < results->total; i++ ) {
-  
-    CvRect* res                = (CvRect*)cvGetSeqElem( results, i);
-    ExtractedYImage * metadata = extracted_y_image_new(res->width, res->height);
-    unsigned char ** y_plane   = extracted_y_image_get_y(metadata);
-    int metadata_row           = 0;
-
-    /* Copy the object from the original frame */
-    for (row = res->y; row < (res->height + res->y); row++) {
-
-      int metadata_col = 0;
-
-      for (col = res->x; col < (res->width + res->x); col ++) {
-          y_plane[metadata_row][metadata_col] = y[row][col];
-          metadata_col++;
-      }
-      metadata_row++;
-    }
-
-    metadata_objs[i] = (ExtractedMetadata *) metadata;
-  }
- 
-  /* NULL termination */
-  metadata_objs[results->total] = NULL;
 
   /* Freeing images */
   cvReleaseImage(&frame);
   cvReleaseImage(&gray);
 
-  return metadata_objs;
+  if (results && (results->total <= 0) ) {
+      return NULL;
+  }
+
+  return (CvRect*)cvGetSeqElem( results, 0);
 }
 
+
+/*!
+ *************************************************************************************
+ * \brief
+ *    Function body for extract metadata from the y image plane.
+ *
+ * \return
+ *    A ExtractedMetadata object or NULL in case no metadata is extracted.
+ *
+ *************************************************************************************
+ */
+ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned char ** y, int width, int height)
+{
+  /* First we must convert the Y luma plane to BGR and them to grayscale. 
+     On grayscale Y = R = G = B. Pretty simple to convert. */
+
+  ExtractedMetadata * metadata = NULL;
+  CvRect* res                  = metadata_extractor_search_for_object_of_interest(y, width, height);
+
+  if (!res) {
+      return NULL;
+  }
+
+  metadata = extracted_y_image_new(res->width, res->height);
+
+  unsigned char ** y_plane  = extracted_y_image_get_y(metadata);
+  int metadata_row          = 0;
+  int row                   = 0;
+  int col                   = 0;
+
+  /* Copy the object from the original frame */
+  for (row = res->y; row < (res->height + res->y); row++) {
+
+    int metadata_col = 0;
+
+    for (col = res->x; col < (res->width + res->x); col ++) {
+        y_plane[metadata_row][metadata_col] = y[row][col];
+        metadata_col++;
+    }
+    metadata_row++;
+  }
+
+  return metadata;
+}
+
+ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned char ** y,
+                                                                   int width,
+                                                                   int height)
+{
+  ExtractedMetadata * metadata = NULL;
+  CvRect* res                  = metadata_extractor_search_for_object_of_interest(y, width, height);
+
+  if (!res) {
+      return NULL;
+  }
+
+  return (ExtractedMetadata *) extracted_object_bounding_box_new(res->x, res->y, res->width, res->height);
+}
