@@ -103,7 +103,10 @@ static CvRect* metadata_extractor_search_for_object_of_interest(unsigned char **
  *
  *************************************************************************************
  */
-ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned char ** y, int width, int height)
+ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned int frame_num, 
+                                                          unsigned char ** y, 
+                                                          int width, 
+                                                          int height)
 {
   /* First we must convert the Y luma plane to BGR and them to grayscale. 
      On grayscale Y = R = G = B. Pretty simple to convert. */
@@ -115,7 +118,7 @@ ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned char ** y, in
       return NULL;
   }
 
-  metadata = extracted_y_image_new(res->width, res->height);
+  metadata = extracted_y_image_new(frame_num, res->width, res->height);
 
   unsigned char ** y_plane  = extracted_y_image_get_y(metadata);
   int metadata_row          = 0;
@@ -137,7 +140,8 @@ ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned char ** y, in
   return metadata;
 }
 
-ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned char ** y,
+ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned int frame_num, 
+                                                                   unsigned char ** y,
                                                                    int width,
                                                                    int height)
 {
@@ -148,5 +152,5 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned char
       return NULL;
   }
 
-  return (ExtractedMetadata *) extracted_object_bounding_box_new(res->x, res->y, res->width, res->height);
+  return (ExtractedMetadata *) extracted_object_bounding_box_new(frame_num, res->x, res->y, res->width, res->height);
 }

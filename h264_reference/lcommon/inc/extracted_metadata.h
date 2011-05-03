@@ -15,7 +15,9 @@
 
 typedef struct _ExtractedYImage ExtractedYImage;
 typedef struct _ExtractedMetadata ExtractedMetadata;
+typedef struct _ExtractedMetadataBuffer ExtractedMetadataBuffer;
 typedef struct _ExtractedObjectBoundingBox ExtractedObjectBoundingBox;
+
 
 /* ExtractedObjectBoundingBox API */
 
@@ -23,6 +25,7 @@ typedef struct _ExtractedObjectBoundingBox ExtractedObjectBoundingBox;
  *******************************************************************************
  * Creates a new extracted image, the image only has the luma plane (Y).
  *
+ * @param frame_num The frame number this metadata belongs.
  * @param x The x coordinate of the bounding box.
  * @param y The y coordinate of the bounding box.
  * @param width The width of the bounding box.
@@ -31,7 +34,8 @@ typedef struct _ExtractedObjectBoundingBox ExtractedObjectBoundingBox;
  *
  *******************************************************************************
  */
-ExtractedObjectBoundingBox * extracted_object_bounding_box_new(int x, int y, int width, int height);
+ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int frame_num, int x, int y, int width, int height);
+
 
 /* ExtractedYImage API */
 
@@ -39,13 +43,14 @@ ExtractedObjectBoundingBox * extracted_object_bounding_box_new(int x, int y, int
  *******************************************************************************
  * Creates a new extracted image, the image only has the luma plane (Y).
  *
+ * @param frame_num The frame number this metadata belongs.
  * @param width The width of the image that will be saved.
  * @param height The height of the image that will be saved.
  * @return The newly allocated ExtractedImage object.
  *
  *******************************************************************************
  */
-ExtractedYImage * extracted_y_image_new(int width, int height);
+ExtractedYImage * extracted_y_image_new(unsigned int frame_num, int width, int height);
 
 /*!
  *******************************************************************************
@@ -57,6 +62,7 @@ ExtractedYImage * extracted_y_image_new(int width, int height);
  *******************************************************************************
  */
 unsigned char ** extracted_y_image_get_y(ExtractedYImage * img);
+
 
 /* ExtractedMetadata API */
 
@@ -116,5 +122,40 @@ void extracted_metadata_save(ExtractedMetadata * metadata, int fd);
  *******************************************************************************
  */
 void extracted_metadata_free(ExtractedMetadata * metadata);
+
+
+/* ExtractedMetadataBuffer API */
+
+/*!
+ *******************************************************************************
+ * Creates a new ExtractedMetadataBuffer object. 
+ *
+ * @return The metadata buffer object, or NULL in case of error.
+ *
+ *******************************************************************************
+ */
+ExtractedMetadataBuffer * extracted_metadata_buffer_new();
+
+/*!
+ *******************************************************************************
+ * Add a metadata do the buffer. 
+ *
+ * @param buffer The metadata buffer object.
+ * @param metadata The metadata object.
+ *
+ *******************************************************************************
+ */
+void extracted_metadata_buffer_add(ExtractedMetadataBuffer * buffer, ExtractedMetadata * obj);
+
+/*!
+ *******************************************************************************
+ * Get a metadata from the buffer for the given frame, all late metadata will
+ * be freed, if there is no metadata for this frame return NULL.
+ *
+ * @return The metadata object, or NULL if there is no metadata for this frame.
+ *
+ *******************************************************************************
+ */
+ExtractedMetadata * extracted_metadata_buffer_get(ExtractedMetadataBuffer * buffer, int frame_number);
 
 #endif

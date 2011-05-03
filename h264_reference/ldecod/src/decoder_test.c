@@ -204,6 +204,7 @@ int main(int argc, char **argv)
   int hFileDecOutput0=-1, hFileDecOutput1=-1;
   int iFramesOutput=0, iFramesDecoded=0;
   InputParameters InputParams;
+  ExtractedMetadataBuffer * metadata_buffer = NULL;
 
 #if DECOUTPUT_TEST
   hFileDecOutput0 = open(DECOUTPUT_VIEW0_FILENAME, OPENFLAGS_WRITE, OPEN_PERMISSIONS);
@@ -215,7 +216,8 @@ int main(int argc, char **argv)
   //get input parameters;
   Configure(&InputParams, argc, argv);
   //open decoder;
-  iRet = OpenDecoder(&InputParams);
+  metadata_buffer = extracted_metadata_buffer_new();
+  iRet = OpenDecoder(&InputParams, metadata_buffer);
   if(iRet != DEC_OPEN_NOERR)
   {
     fprintf(stderr, "Open encoder failed: 0x%x!\n", iRet);
@@ -225,14 +227,15 @@ int main(int argc, char **argv)
   //decoding;
   do
   {
-    ExtractedMetadata * metadata = NULL;
-    iRet = DecodeOneFrame(&pDecPicList, &metadata);
+    iRet = DecodeOneFrame(&pDecPicList);
     if(iRet==DEC_EOS || iRet==DEC_SUCCEED)
     {
       //process the decoded picture, output or display;
   
      /* KATCIPIS - This seems the best place to do some process on the decoded frame, right before it is written on the file. */
      printf("iFramesDecoded[%d]\n", iFramesDecoded);
+     ExtractedMetadata * metadata = extracted_metadata_buffer_get(metadata_buffer, iFramesDecoded);
+
      if (metadata) {
        /* Lets process and free the metadata relative to the current frame */
        extracted_metadata_save(metadata, 1);

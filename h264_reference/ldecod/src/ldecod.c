@@ -165,8 +165,6 @@ static void alloc_video_params( VideoParameters **p_Vid)
   (*p_Vid)->pDecOuputPic = (DecodedPicList *)calloc(1, sizeof(DecodedPicList));
   (*p_Vid)->pNextPPS = AllocPPS();
 
-  /* KATCIPIS this is the best place to guarantee that metadata array is initialized with NULL */
-  (*p_Vid)->current_frame_metadata = NULL;
 }
 
 
@@ -1072,7 +1070,7 @@ Return:
        0: NOERROR;
        <0: ERROR;
 ************************************/
-int OpenDecoder(InputParameters *p_Inp)
+int OpenDecoder(InputParameters *p_Inp, ExtractedMetadataBuffer * metadata_buffer)
 {
 #if (MVC_EXTENSION_ENABLE)
   int i;
@@ -1144,6 +1142,8 @@ int OpenDecoder(InputParameters *p_Inp)
   init_subset_sps_list(pDecoder->p_Vid->SubsetSeqParSet, MAXSPS);
 #endif
 
+  pDecoder->p_Vid->metadata_buffer = metadata_buffer;
+
   return DEC_OPEN_NOERR;
 }
 
@@ -1154,7 +1154,7 @@ Return:
        1: Finished decoding;
        others: Error Code;
 ************************************/
-int DecodeOneFrame(DecodedPicList **ppDecPicList, ExtractedMetadata ** metadata)
+int DecodeOneFrame(DecodedPicList **ppDecPicList)
 {
   int iRet;
   DecoderParams *pDecoder = p_Dec;
@@ -1173,9 +1173,8 @@ int DecodeOneFrame(DecodedPicList **ppDecPicList, ExtractedMetadata ** metadata)
     iRet |= DEC_ERRMASK;
   }
 
-  *ppDecPicList = pDecoder->p_Vid->pDecOuputPic;
-  *metadata     = pDecoder->p_Vid->current_frame_metadata;
-  pDecoder->p_Vid->current_frame_metadata = NULL;
+  *ppDecPicList    = pDecoder->p_Vid->pDecOuputPic;
+
   return iRet;
 }
 

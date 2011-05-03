@@ -25,6 +25,7 @@
  *********************************************************************************
  * Extracts the entire raw interest object as a metadata from the Y plane.
  *
+ * @param frame_number The frame number.
  * @param y The luma plane, y[i][j] where i is the row and j the column.
  * @param width The luma plane width.
  * @param height The luma plane height.
@@ -33,7 +34,8 @@
  *
  *********************************************************************************
  */
-ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned char ** y, 
+ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned int frame_number,
+                                                          unsigned char ** y, 
                                                           int width, 
                                                           int height);
 
@@ -41,6 +43,7 @@ ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned char ** y,
  *********************************************************************************
  * Extracts the interest object bounding box as a metadata from the Y plane.
  *
+ * @param frame_number The frame number.
  * @param y The luma plane, y[i][j] where i is the row and j the column.
  * @param width The luma plane width.
  * @param height The luma plane height.
@@ -49,7 +52,8 @@ ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned char ** y,
  *
  *********************************************************************************
  */
-ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned char ** y,
+ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned int frame_number,
+                                                                   unsigned char ** y,
                                                                    int width,
                                                                    int height);
 

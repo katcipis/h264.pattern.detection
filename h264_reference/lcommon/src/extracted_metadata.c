@@ -26,6 +26,10 @@ struct _ExtractedMetadata {
   ExtractedMetadataSaveFunc save;
 };
 
+struct _ExtractedMetadataBuffer {
+  ExtractedMetadata * head;
+};
+
 struct _ExtractedYImage {
   ExtractedMetadata parent;
   /* Image plane - 8 bits depth */
@@ -128,7 +132,7 @@ static void extracted_object_bounding_box_serialize (ExtractedMetadata * metadat
 static int extracted_object_bounding_box_get_serialized_size(ExtractedMetadata * metadata);
 static void extracted_object_bounding_box_save(ExtractedMetadata * metadata, int fd);
 
-ExtractedObjectBoundingBox * extracted_object_bounding_box_new(int x, int y, int width, int height)
+ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int frame_num, int x, int y, int width, int height)
 {
     static uint32_t bounding_box_id           = 0;
     ExtractedObjectBoundingBox * bounding_box = malloc(sizeof(ExtractedObjectBoundingBox));
@@ -252,7 +256,7 @@ static void extracted_y_image_serialize (ExtractedMetadata * metadata, char * da
 static int extracted_y_image_get_serialized_size(ExtractedMetadata * metadata);
 static void extracted_y_image_save(ExtractedMetadata * metadata, int fd);
 
-ExtractedYImage * extracted_y_image_new(int width, int height)
+ExtractedYImage * extracted_y_image_new(unsigned int frame_num, int width, int height)
 {
   ExtractedYImage * metadata = malloc(sizeof(ExtractedYImage));
   unsigned char ** y_rows   = malloc(sizeof(unsigned char *) * height);
@@ -385,3 +389,27 @@ static void extracted_y_image_save(ExtractedMetadata * metadata, int fd)
     }
   }
 }
+
+/*
+ *******************************
+ * ExtractedMetadataBuffer API *
+ *******************************
+ */
+
+
+ExtractedMetadataBuffer * extracted_metadata_buffer_new()
+{
+  return NULL;
+}
+
+
+void extracted_metadata_buffer_add(ExtractedMetadataBuffer * buffer, ExtractedMetadata * obj)
+{
+
+}
+
+ExtractedMetadata * extracted_metadata_buffer_get(ExtractedMetadataBuffer * buffer, int frame_number)
+{
+  return NULL;
+}
+

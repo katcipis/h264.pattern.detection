@@ -119,13 +119,7 @@ void InterpretSEIMessage(byte* msg, int size, VideoParameters *p_Vid, Slice *pSl
       user_data_parser_unregistered_sei_get_data(msg+offset, payload_size, 
                                                  &serialized_metadata, &serialized_metadata_size);
 
-      if (p_Vid->current_frame_metadata) {
-          printf("InterpretSEIMessage: WARNING: current frame metadata is not NULL, overwriting with a new one !!!\n");
-          extracted_metadata_free(p_Vid->current_frame_metadata);
-          p_Vid->current_frame_metadata = NULL;
-      }
-
-      p_Vid->current_frame_metadata = extracted_metadata_deserialize((const char *) serialized_metadata, serialized_metadata_size);
+      extracted_metadata_buffer_add(p_Vid->metadata_buffer, extracted_metadata_deserialize((const char *) serialized_metadata, serialized_metadata_size));
       /* KATCIPIS - ended receiving the serialized metadata */
 
       break;

@@ -834,8 +834,8 @@ typedef struct video_par
 #endif
   pic_parameter_set_rbsp_t *pNextPPS;
 
-  /* KATCIPIS - current frame metadata. */
-  ExtractedMetadata * current_frame_metadata;
+  /* KATCIPIS - metadata buffer. */
+  ExtractedMetadataBuffer * metadata_buffer;
 } VideoParameters;
 
 // signal to noise ratio parameters

@@ -1173,11 +1173,10 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
 
 
   /*  KATCIPIS - This sounds like a good place to process the raw Y imgData. */
-  ExtractedMetadata * metadata = metadata_extractor_extract_object_bounding_box((unsigned char **) p_Vid->imgData.frm_data[0],
+  ExtractedMetadata * metadata = metadata_extractor_extract_object_bounding_box(p_Vid->frame_no,
+                                                                                (unsigned char **) p_Vid->imgData.frm_data[0],
                                                                                  p_Vid->imgData.format.width[0],
                                                                                  p_Vid->imgData.format.height[0]);
-
-  printf("p_Vid->frame_no[%d]\n", p_Vid->frame_no);
 
   if (metadata) {
     int size                = extracted_metadata_get_serialized_size(metadata);

@@ -42,8 +42,8 @@ typedef struct dec_set_t
 extern "C" {
 #endif
 
-int OpenDecoder(InputParameters *p_Inp);
-int DecodeOneFrame(DecodedPicList **ppDecPic, ExtractedMetadata ** metadata);
+int OpenDecoder(InputParameters *p_Inp, ExtractedMetadataBuffer * metadata_buffer);
+int DecodeOneFrame(DecodedPicList **ppDecPic);
 int FinitDecoder(DecodedPicList **ppDecPicList);
 int CloseDecoder();
 int SetOptsDecoder(DecSet_t *pDecOpts);
