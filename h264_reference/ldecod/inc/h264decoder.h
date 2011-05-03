@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 int OpenDecoder(InputParameters *p_Inp);
-int DecodeOneFrame(DecodedPicList **ppDecPic);
+int DecodeOneFrame(DecodedPicList **ppDecPic, ExtractedMetadata ** metadata);
 int FinitDecoder(DecodedPicList **ppDecPicList);
 int CloseDecoder();
 int SetOptsDecoder(DecSet_t *pDecOpts);

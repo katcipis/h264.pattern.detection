@@ -225,11 +225,24 @@ int main(int argc, char **argv)
   //decoding;
   do
   {
-    iRet = DecodeOneFrame(&pDecPicList);
+    ExtractedMetadata * metadata = NULL;
+    iRet = DecodeOneFrame(&pDecPicList, &metadata);
     if(iRet==DEC_EOS || iRet==DEC_SUCCEED)
     {
       //process the decoded picture, output or display;
-
+  
+     /* KATCIPIS - This seems the best place to do some process on the decoded frame, right before it is written on the file. */
+     printf("iFramesDecoded[%d]\n", iFramesDecoded);
+     if (metadata) {
+       /* Lets process and free the metadata relative to the current frame */
+       extracted_metadata_save(metadata, 1);
+       extracted_metadata_free(metadata);
+     
+       /* Next frame does not have a metadata yet */
+       metadata = NULL;
+     }
+     /* KATCIPIS - end of metadata processing on the decoded frame. */ 
+  
       iFramesOutput += WriteOneFrame(pDecPicList, hFileDecOutput0, hFileDecOutput1, 0);
       iFramesDecoded++;
     }

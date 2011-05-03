@@ -1154,7 +1154,7 @@ Return:
        1: Finished decoding;
        others: Error Code;
 ************************************/
-int DecodeOneFrame(DecodedPicList **ppDecPicList)
+int DecodeOneFrame(DecodedPicList **ppDecPicList, ExtractedMetadata ** metadata)
 {
   int iRet;
   DecoderParams *pDecoder = p_Dec;
@@ -1174,6 +1174,8 @@ int DecodeOneFrame(DecodedPicList **ppDecPicList)
   }
 
   *ppDecPicList = pDecoder->p_Vid->pDecOuputPic;
+  *metadata     = pDecoder->p_Vid->current_frame_metadata;
+  pDecoder->p_Vid->current_frame_metadata = NULL;
   return iRet;
 }
 

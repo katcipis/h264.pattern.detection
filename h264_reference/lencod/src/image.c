@@ -1177,6 +1177,8 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
                                                                                  p_Vid->imgData.format.width[0],
                                                                                  p_Vid->imgData.format.height[0]);
 
+  printf("p_Vid->frame_no[%d]\n", p_Vid->frame_no);
+
   if (metadata) {
     int size                = extracted_metadata_get_serialized_size(metadata);
     char * data             = malloc(size);
