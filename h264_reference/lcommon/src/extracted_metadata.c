@@ -440,12 +440,12 @@ static void extracted_y_image_save(ExtractedMetadata * metadata, int fd)
  */
 
 /* */
-static const short METADATA_BUFFER_SIZE  = 255; /* 2 ^ 8 = 0 <-> 255 = 0x000000FF */
+static const short METADATA_BUFFER_MAX_INDEX  = 255; /* 2 ^ 8 = 0 <-> 255 = 0x000000FF */
 
 /* Lets use a always empty slot technique to implement the ringbuffer */
 static short extracted_metadata_buffer_get_next_index(short index)
 {
-  return (index + 1) & METADATA_BUFFER_SIZE;
+  return (index + 1) & METADATA_BUFFER_MAX_INDEX;
 }
 
 
@@ -453,7 +453,7 @@ ExtractedMetadataBuffer * extracted_metadata_buffer_new()
 {
   ExtractedMetadataBuffer * buffer = malloc(sizeof(ExtractedMetadataBuffer));
 
-  buffer->ringbuffer  = malloc(sizeof(ExtractedMetadata *) * METADATA_BUFFER_SIZE);
+  buffer->ringbuffer  = malloc(sizeof(ExtractedMetadata *) * (METADATA_BUFFER_MAX_INDEX + 1));
   buffer->read_index  = 0;
   buffer->write_index = 0;
 
