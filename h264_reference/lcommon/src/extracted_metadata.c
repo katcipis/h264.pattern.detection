@@ -465,6 +465,11 @@ void extracted_metadata_buffer_add(ExtractedMetadataBuffer * buffer, ExtractedMe
 {
   short new_write_index = extracted_metadata_buffer_get_next_index(buffer->write_index);
 
+  if (!buffer || !obj) {
+    printf("extracted_metadata_buffer_add: ERROR: NULL parameters given !!!\n");
+    return;
+  }
+
   if (new_write_index == buffer->read_index) {
     printf("extracted_metadata_buffer_add: ERROR: BUFFER OVERFLOW !!!\n");
     return;
@@ -482,10 +487,11 @@ ExtractedMetadata * extracted_metadata_buffer_get(ExtractedMetadataBuffer * buff
     obj                = buffer->ringbuffer[buffer->read_index];
     buffer->read_index = extracted_metadata_buffer_get_next_index(buffer->read_index);
 
-    printf("extracted_metadata_buffer_get: frame_number received[%u], expected[%u]\n", obj->frame_number, frame_number);
     if (frame_number == obj->frame_number) {
       return obj;
     }
+    
+    extracted_metadata_free(obj);
   }
 
   printf("extracted_metadata_buffer_get: cant find frame_number [%u]\n", frame_number);

@@ -233,12 +233,12 @@ int main(int argc, char **argv)
       //process the decoded picture, output or display;
   
      /* KATCIPIS - This seems the best place to do some process on the decoded frame, right before it is written on the file. */
-     printf("iFramesDecoded[%d]\n", iFramesDecoded);
      ExtractedMetadata * metadata = extracted_metadata_buffer_get(metadata_buffer, iFramesDecoded);
 
      if (metadata) {
        /* Lets process and free the metadata relative to the current frame */
        extracted_metadata_save(metadata, 1);
+       printf("Freeing metadata !!!!\n");
        extracted_metadata_free(metadata);
      
        /* Next frame does not have a metadata yet */
