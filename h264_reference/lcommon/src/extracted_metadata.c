@@ -19,6 +19,7 @@ typedef enum {
 } ExtractedMetadataType;
 
 struct _ExtractedMetadata {
+  uint32_t frame_number;
   ExtractedMetadataType type;
   ExtractedMetadataFreeFunc free;
   ExtractedMetadataSerializeFunc serialize;
@@ -27,7 +28,9 @@ struct _ExtractedMetadata {
 };
 
 struct _ExtractedMetadataBuffer {
-  ExtractedMetadata * head;
+  ExtractedMetadata ** ringbuffer;
+  short read_index;
+  short write_index;
 };
 
 struct _ExtractedYImage {
@@ -53,6 +56,12 @@ static const int EXTRACTED_METADATA_TYPE_SIZE = 1;
 static ExtractedMetadata * extracted_y_image_deserialize(const char * data, int size);
 static ExtractedMetadata * extracted_object_bounding_box_deserialize(const char * data, int size);
 
+static int extracted_metadata_header_size()
+{
+  /* type size + frame number size */
+  return EXTRACTED_METADATA_TYPE_SIZE + sizeof(uint32_t);
+}
+
 /*
  ********************************
  * ExtractedMetadata Public API *
@@ -65,35 +74,64 @@ void extracted_metadata_free(ExtractedMetadata * metadata)
 
 int extracted_metadata_get_serialized_size(ExtractedMetadata * metadata)
 {
-  return metadata->get_serialized_size(metadata) + EXTRACTED_METADATA_TYPE_SIZE;
+  /* Subclass size + metadata header size */
+  return metadata->get_serialized_size(metadata) + extracted_metadata_header_size();
 }
 
 void extracted_metadata_serialize(ExtractedMetadata * metadata, char * serialized_data)
 {
   /* lets write the media type (1 byte) */
   *serialized_data = (char) metadata->type;
-  metadata->serialize(metadata, serialized_data + EXTRACTED_METADATA_TYPE_SIZE);
+  serialized_data += sizeof(char);
+
+  /* lets write the frame number (4 bytes) */
+  *((uint32_t *) serialized_data) = htonl(metadata->frame_number);
+  serialized_data                += sizeof(uint32_t);
+
+  printf("extracted_metadata_serialize: serialized frame_number[%u]\n", metadata->frame_number);
+  metadata->serialize(metadata, serialized_data);
 }
 
 ExtractedMetadata * extracted_metadata_deserialize(const char * data, int size)
 {
-  /* first byte is the metadata type */
-  ExtractedMetadataType type = (ExtractedMetadataType) *data;
+  ExtractedMetadataType type = 0;
+  uint32_t frame_number      = 0;
   ExtractedMetadata * ret    = NULL;
+
+  if (size < extracted_metadata_header_size()) {
+    printf("extracted_metadata_deserialize: Mininum metadata size [%d], data size is [%d]\n", 
+           size, extracted_metadata_header_size());
+    return NULL;
+  }
+
+  /* first byte is the metadata type */
+  type  = (ExtractedMetadataType) *data;
+  data += EXTRACTED_METADATA_TYPE_SIZE;
+  size -= EXTRACTED_METADATA_TYPE_SIZE;
+
+  /* next 4 bytes are the frame number of the metadata */
+  frame_number = ntohl(*((uint32_t *) data));
+
+  data        += sizeof(uint32_t);
+  size        -= sizeof(uint32_t);
 
   switch (type) 
   {
     case ExtractedMetadataYImage:
-      ret = extracted_y_image_deserialize(data + EXTRACTED_METADATA_TYPE_SIZE, size - EXTRACTED_METADATA_TYPE_SIZE);
+      ret = extracted_y_image_deserialize(data, size);
       break;
 
     case ExtractedMetadataObjectBoundingBox:
-      ret = extracted_object_bounding_box_deserialize(data + EXTRACTED_METADATA_TYPE_SIZE, size - EXTRACTED_METADATA_TYPE_SIZE);
+      ret = extracted_object_bounding_box_deserialize(data, size);
       break;
     default:
       printf("extracted_metadata_deserialize: cant find the extracted metadata type !!!\n");
   }
  
+  if (ret) {
+    ret->frame_number = frame_number;
+  }
+
   return ret;
 }
 
@@ -112,13 +150,15 @@ static void extracted_metadata_init(ExtractedMetadata * metadata,
                                     ExtractedMetadataSerializeFunc serialize,
                                     ExtractedMetadataGetSerializedSizeFunc get_serialized_size,
                                     ExtractedMetadataSaveFunc save,
-                                    ExtractedMetadataType type)
+                                    ExtractedMetadataType type,
+                                    uint32_t frame_number)
 {
   metadata->free                = free;
   metadata->serialize           = serialize;
   metadata->get_serialized_size = get_serialized_size;
   metadata->save                = save;
   metadata->type                = type;
+  metadata->frame_number        = frame_number;
 }
 
 /*
@@ -148,7 +188,8 @@ ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int fram
                              extracted_object_bounding_box_serialize,
                              extracted_object_bounding_box_get_serialized_size,
                              extracted_object_bounding_box_save,
-                             ExtractedMetadataObjectBoundingBox);
+                             ExtractedMetadataObjectBoundingBox,
+                             frame_num);
 
     bounding_box_id++;
     return bounding_box;
@@ -202,7 +243,7 @@ static ExtractedMetadata * extracted_object_bounding_box_deserialize(const char 
   }
 
   /* avoid problems with type size and endianness */
-  id = ntohs(*((uint32_t *) data));
+  id = ntohl(*((uint32_t *) data));
   data += sizeof(uint32_t);
 
   x = ntohs(((uint16_t *) data)[0]);
@@ -210,7 +251,8 @@ static ExtractedMetadata * extracted_object_bounding_box_deserialize(const char 
   width = ntohs(((uint16_t *) data)[2]);
   height = ntohs(((uint16_t *) data)[3]);
 
-  return (ExtractedMetadata *) extracted_object_bounding_box_new(x, y, width, height);
+  /* real frame number is set on the metadata superclass deserialize method */
+  return (ExtractedMetadata *) extracted_object_bounding_box_new(0, x, y, width, height);
 }
 
 static int extracted_object_bounding_box_get_serialized_size(ExtractedMetadata * metadata)
@@ -280,7 +322,8 @@ ExtractedYImage * extracted_y_image_new(unsigned int frame_num, int width, int h
                           extracted_y_image_serialize,
                           extracted_y_image_get_serialized_size,
                           extracted_y_image_save,
-                          ExtractedMetadataYImage);
+                          ExtractedMetadataYImage,
+                          frame_num);
 
   return metadata;
 }
@@ -341,8 +384,8 @@ static ExtractedMetadata * extracted_y_image_deserialize(const char * data, int 
     return NULL;
   }
 
-  /* Lets create a new empty image */
-  img   = extracted_y_image_new(width, height);
+  /* real frame number is set on the metadata superclass deserialize method */
+  img   = extracted_y_image_new(0, width, height);
 
   /* lets fill the plane */
   memcpy(img->y[0], data, width * height * sizeof(unsigned char));
@@ -396,20 +439,56 @@ static void extracted_y_image_save(ExtractedMetadata * metadata, int fd)
  *******************************
  */
 
+/* */
+static const short METADATA_BUFFER_SIZE  = 255; /* 2 ^ 8 = 0 <-> 255 = 0x000000FF */
+
+/* Lets use a always empty slot technique to implement the ringbuffer */
+static short extracted_metadata_buffer_get_next_index(short index)
+{
+  return (index + 1) & METADATA_BUFFER_SIZE;
+}
+
 
 ExtractedMetadataBuffer * extracted_metadata_buffer_new()
 {
-  return NULL;
+  ExtractedMetadataBuffer * buffer = malloc(sizeof(ExtractedMetadataBuffer));
+
+  buffer->ringbuffer  = malloc(sizeof(ExtractedMetadata *) * METADATA_BUFFER_SIZE);
+  buffer->read_index  = 0;
+  buffer->write_index = 0;
+
+  return buffer;
 }
 
 
 void extracted_metadata_buffer_add(ExtractedMetadataBuffer * buffer, ExtractedMetadata * obj)
 {
+  short new_write_index = extracted_metadata_buffer_get_next_index(buffer->write_index);
 
+  if (new_write_index == buffer->read_index) {
+    printf("extracted_metadata_buffer_add: ERROR: BUFFER OVERFLOW !!!\n");
+    return;
+  }
+
+  buffer->ringbuffer[buffer->write_index] = obj;
+  buffer->write_index                     = new_write_index;
 }
 
-ExtractedMetadata * extracted_metadata_buffer_get(ExtractedMetadataBuffer * buffer, int frame_number)
+ExtractedMetadata * extracted_metadata_buffer_get(ExtractedMetadataBuffer * buffer, unsigned int frame_number)
 {
+  ExtractedMetadata * obj = NULL;
+
+  while (buffer->write_index != buffer->read_index) {
+    obj                = buffer->ringbuffer[buffer->read_index];
+    buffer->read_index = extracted_metadata_buffer_get_next_index(buffer->read_index);
+
+    printf("extracted_metadata_buffer_get: frame_number received[%u], expected[%u]\n", obj->frame_number, frame_number);
+    if (frame_number == obj->frame_number) {
+      return obj;
+    }
+  }
+
+  printf("extracted_metadata_buffer_get: cant find frame_number [%u]\n", frame_number);
   return NULL;
 }
 

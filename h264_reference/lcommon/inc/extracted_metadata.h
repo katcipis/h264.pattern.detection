@@ -156,6 +156,6 @@ void extracted_metadata_buffer_add(ExtractedMetadataBuffer * buffer, ExtractedMe
  *
  *******************************************************************************
  */
-ExtractedMetadata * extracted_metadata_buffer_get(ExtractedMetadataBuffer * buffer, int frame_number);
+ExtractedMetadata * extracted_metadata_buffer_get(ExtractedMetadataBuffer * buffer, unsigned int frame_number);
 
 #endif
