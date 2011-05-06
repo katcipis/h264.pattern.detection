@@ -216,7 +216,10 @@ int main(int argc, char **argv)
   //get input parameters;
   Configure(&InputParams, argc, argv);
   //open decoder;
+
+  /* KATCIPIS create the metadata buffer */
   metadata_buffer = extracted_metadata_buffer_new();
+
   iRet = OpenDecoder(&InputParams, metadata_buffer);
   if(iRet != DEC_OPEN_NOERR)
   {
@@ -238,7 +241,6 @@ int main(int argc, char **argv)
      if (metadata) {
        /* Lets process and free the metadata relative to the current frame */
        extracted_metadata_save(metadata, 1);
-       printf("Freeing metadata !!!!\n");
        extracted_metadata_free(metadata);
      
        /* Next frame does not have a metadata yet */
@@ -270,6 +272,9 @@ int main(int argc, char **argv)
   {
     close(hFileDecOutput1);
   }
+
+  /* KATCIPIS free the metadata buffer */
+  extracted_metadata_buffer_free(metadata_buffer);
 
   //printf("%d frames are decoded.\n", iFramesDecoded);
   //printf("%d frames are decoded, %d frames output.\n", iFramesDecoded, iFramesOutput);

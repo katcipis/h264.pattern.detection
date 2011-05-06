@@ -498,3 +498,16 @@ ExtractedMetadata * extracted_metadata_buffer_get(ExtractedMetadataBuffer * buff
   return NULL;
 }
 
+void extracted_metadata_buffer_free(ExtractedMetadataBuffer * buffer)
+{
+  ExtractedMetadata * obj = NULL;
+
+  while (buffer->write_index != buffer->read_index) {
+    extracted_metadata_free(buffer->ringbuffer[buffer->read_index]);
+    buffer->read_index = extracted_metadata_buffer_get_next_index(buffer->read_index);
+  }
+
+  free(buffer->ringbuffer);
+  free(buffer);
+}
+

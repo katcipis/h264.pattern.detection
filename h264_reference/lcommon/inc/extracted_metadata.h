@@ -147,6 +147,18 @@ ExtractedMetadataBuffer * extracted_metadata_buffer_new();
  */
 void extracted_metadata_buffer_add(ExtractedMetadataBuffer * buffer, ExtractedMetadata * obj);
 
+
+/*!
+ *******************************************************************************
+ * Free a Metadata Buffer, freeing all ExtractedMetadata it may have inside. 
+ *
+ * @param buffer The metadata buffer object.
+ *
+ *******************************************************************************
+ */
+void extracted_metadata_buffer_free(ExtractedMetadataBuffer * buffer);
+
+
 /*!
  *******************************************************************************
  * Get a metadata from the buffer for the given frame, all late metadata will
