@@ -140,6 +140,9 @@ ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned int frame_num
   return metadata;
 }
 
+/******************************** 
+ * ObjectBoundingBox facilities * 
+ ********************************/
 ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned int frame_num, 
                                                                    unsigned char ** y,
                                                                    int width,
