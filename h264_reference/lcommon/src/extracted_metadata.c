@@ -206,10 +206,10 @@ ExtractedObjectBoundingBox * extracted_object_bounding_box_from_metadata(Extract
 
 void extracted_object_bounding_box_get_data(ExtractedObjectBoundingBox * box,
                                             unsigned int * id,
-                                            unsigned int * x,
-                                            unsigned int * y,
-                                            unsigned int * width,
-                                            unsigned int * height)
+                                            int * x,
+                                            int * y,
+                                            int * width,
+                                            int * height)
 {
 
   if (!box) {
@@ -542,8 +542,6 @@ ExtractedMetadata * extracted_metadata_buffer_get(ExtractedMetadataBuffer * buff
 
 void extracted_metadata_buffer_free(ExtractedMetadataBuffer * buffer)
 {
-  ExtractedMetadata * obj = NULL;
-
   while (buffer->write_index != buffer->read_index) {
     extracted_metadata_free(buffer->ringbuffer[buffer->read_index]);
     buffer->read_index = extracted_metadata_buffer_get_next_index(buffer->read_index);

@@ -120,17 +120,28 @@ static int WriteOneFrame(DecodedPicList *pDecPic, int hFileOutput0, int hFileOut
       iHeightUV = pPic->iHeight;
     iWidthUV *= ((pPic->iBitDepth+7)>>3);
     iStrideUV = pPic->iUVBufStride;
-    
+   
     do
     {
+      printf("KMLO DO MAL \n");
+
       if(pPic->iYUVStorageFormat==2)
         hFileOutput = (pPic->iViewId&0xffff)? hFileOutput1 : hFileOutput0;
       else
         hFileOutput = hFileOutput0;
+
+      printf("KMLO hFileOutput[%d]\n", hFileOutput);
+
       if(hFileOutput >=0)
       {
         //Y;
         pbBuf = pPic->pY;
+
+        printf("KMLO 1: writing[%d] from[%d] to[%d]\n", iHeight, 0, iWidth);
+        for(i=0; i < iHeight; i++) {
+          memset(pbBuf+i*iStride, 0, iWidth);
+        }
+
         for(i=0; i<iHeight; i++)
           write(hFileOutput, pbBuf+i*iStride, iWidth);
 
@@ -157,6 +168,12 @@ static int WriteOneFrame(DecodedPicList *pDecPic, int hFileOutput0, int hFileOut
           int iPicSize =iHeight*iStride;
           //Y;
           pbBuf = pPic->pY+iPicSize;
+
+          printf("KMLO 2: writing[%d] from[%d] to[%d]\n", iHeight, 0, iWidth);
+          for(i=0; i < iHeight; i++) {
+            memset(pbBuf+i*iStride, 0, iWidth);
+          }
+
           for(i=0; i<iHeight; i++)
             write(hFileOutput, pbBuf+i*iStride, iWidth);
 
@@ -201,23 +218,20 @@ static int WriteOneFrame(DecodedPicList *pDecPic, int hFileOutput0, int hFileOut
  */
 static void decoder_draw_bounding_box(ExtractedMetadata * metadata, DecodedPicList *pPic)
 {
-  ExtractedObjectBoundingBox * bouding_box = extracted_object_bounding_box_from_metadata(metadata);
-  int box_x                                = 0;
-  int box_y                                = 0;
-  int box_width                            = 0;
-  int box_height                           = 0;  
-  int box_uv_x                             = 0;
-  int box_uv_y                             = 0;
-  int box_uv_height                        = 0;
-  int box_uv_width                         = 0;
+  ExtractedObjectBoundingBox * bounding_box = extracted_object_bounding_box_from_metadata(metadata);
+  int box_x                                 = 0;
+  int box_y                                 = 0;
+  int box_width                             = 0;
+  int box_height                            = 0;  
  
   if (!bounding_box) {
     return;
   }
 
-  extracted_object_bounding_box_get_data(bounding_box, NULL, &x, &y, &width, &height);
+  extracted_object_bounding_box_get_data(bounding_box, NULL, &box_x, &box_y, &box_width, &box_height);
 
-  if(pPic && (((pPic->iYUVStorageFormat==2) && pPic->bValid==3) || ((pPic->iYUVStorageFormat!=2) && pPic->bValid==1)) ) {
+  if(pPic && (pPic->bValid == 3 || pPic->bValid == 1)) {
+
     int i, iWidth, iHeight, iStride, iWidthUV, iHeightUV, iStrideUV;
     byte *pbBuf;    
 
@@ -241,28 +255,37 @@ static void decoder_draw_bounding_box(ExtractedMetadata * metadata, DecodedPicLi
     iStrideUV = pPic->iUVBufStride;
     
     /* lets validate our bounding box */
-    if (width > iWidth || height > iHeight) {
+    if (box_width > iWidth || box_height > iHeight) {
       printf("decoder_draw_bounding_box: ERROR: bounding box has "
-             "width[%d] height[%d] and the frame has width[%d] height[%d]\n", 
-             width, height, iWidth, iHeight);
+             "width[%d] height[%d] and the frame has width[%d] height[%d]!\n", 
+             box_width, box_height, iWidth, iHeight);
       return;
     }
-    
-    /* lets calculate the bounding box to the chroma components */
-    float ratio   = (float) iWidth / (float) iWidthUV;
-
-    box_uv_x      = floor(x / ratio);
-    box_uv_y      = floor(y / ratio);
-    box_uv_height = floor(height / ratio);
-    box_uv_width  = floor(width / ratio);
-
+   
+    /* We want a red bouding box. */
+ 
     //Y;
     pbBuf = pPic->pY;
-    for(i=0; i<iHeight; i++) {
-      write(hFileOutput, pbBuf+i*iStride, iWidth);
+    /*
+    printf("writing[%d] from[%d] to[%d]\n", iWidth, box_y, box_y + box_height);
+    for(i=box_y; i < box_y + box_height; i++) {
+      memset(pbBuf+i*iStride, 0, iWidth);
+    } */
+
+    printf("writing[%d] from[%d] to[%d]\n", iHeight, 0, iWidth);
+    for(i=0; i < iHeight; i++) {
+      memset(pbBuf+i*iStride, 0, iWidth);
     }
 
+    #if 0
     if(pPic->iYUVFormat != YUV400) {
+      /* lets calculate the bounding box to the chroma components */
+      float ratio       = (float) iWidth / (float) iWidthUV;
+      int box_uv_x      = floor(box_x / ratio);
+      int box_uv_y      = floor(box_y / ratio);
+      int box_uv_height = floor(box_height / ratio);
+      int box_uv_width  = floor(box_width / ratio);
+
       //U;
       pbBuf = pPic->pU;
       for(i=0; i<iHeightUV; i++) {
@@ -274,7 +297,8 @@ static void decoder_draw_bounding_box(ExtractedMetadata * metadata, DecodedPicLi
         write(hFileOutput, pbBuf+i*iStrideUV, iWidthUV);
       }
 
-    }    
+    }
+    #endif    
   }
 }
 
@@ -328,7 +352,7 @@ int main(int argc, char **argv)
 
      if (metadata) {
        /* Lets process and free the metadata relative to the current frame */
-       extracted_metadata_apply_on_frame(metadata, pDecPicList);
+       //decoder_draw_bounding_box(metadata, pDecPicList);
        extracted_metadata_save(metadata, 1);
        extracted_metadata_free(metadata);
      
