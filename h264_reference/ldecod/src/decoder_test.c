@@ -14,6 +14,7 @@
 #include "contributors.h"
 
 #include <sys/stat.h>
+#include <math.h>
 
 //#include "global.h"
 #include "h264decoder.h"
@@ -191,6 +192,93 @@ static int WriteOneFrame(DecodedPicList *pDecPic, int hFileOutput0, int hFileOut
   return iOutputFrame;
 }
 
+/* KATCIPIS - added to do the bounding box drawing */
+/*!
+ ***********************************************************************
+ * \brief
+ *    Draws a bouding box on the frame.
+ ***********************************************************************
+ */
+static void decoder_draw_bounding_box(ExtractedMetadata * metadata, DecodedPicList *pPic)
+{
+  ExtractedObjectBoundingBox * bouding_box = extracted_object_bounding_box_from_metadata(metadata);
+  int box_x                                = 0;
+  int box_y                                = 0;
+  int box_width                            = 0;
+  int box_height                           = 0;  
+  int box_uv_x                             = 0;
+  int box_uv_y                             = 0;
+  int box_uv_height                        = 0;
+  int box_uv_width                         = 0;
+ 
+  if (!bounding_box) {
+    return;
+  }
+
+  extracted_object_bounding_box_get_data(bounding_box, NULL, &x, &y, &width, &height);
+
+  if(pPic && (((pPic->iYUVStorageFormat==2) && pPic->bValid==3) || ((pPic->iYUVStorageFormat!=2) && pPic->bValid==1)) ) {
+    int i, iWidth, iHeight, iStride, iWidthUV, iHeightUV, iStrideUV;
+    byte *pbBuf;    
+
+    iWidth  = pPic->iWidth*((pPic->iBitDepth+7)>>3);
+    iHeight = pPic->iHeight;
+    iStride = pPic->iYBufStride;
+
+    if(pPic->iYUVFormat != YUV444) {
+      iWidthUV = pPic->iWidth>>1;
+    } else {
+      iWidthUV = pPic->iWidth;
+    }
+
+    if(pPic->iYUVFormat == YUV420) {
+      iHeightUV = pPic->iHeight>>1;
+    } else {
+      iHeightUV = pPic->iHeight;
+    }
+
+    iWidthUV *= ((pPic->iBitDepth+7)>>3);
+    iStrideUV = pPic->iUVBufStride;
+    
+    /* lets validate our bounding box */
+    if (width > iWidth || height > iHeight) {
+      printf("decoder_draw_bounding_box: ERROR: bounding box has "
+             "width[%d] height[%d] and the frame has width[%d] height[%d]\n", 
+             width, height, iWidth, iHeight);
+      return;
+    }
+    
+    /* lets calculate the bounding box to the chroma components */
+    float ratio   = (float) iWidth / (float) iWidthUV;
+
+    box_uv_x      = floor(x / ratio);
+    box_uv_y      = floor(y / ratio);
+    box_uv_height = floor(height / ratio);
+    box_uv_width  = floor(width / ratio);
+
+    //Y;
+    pbBuf = pPic->pY;
+    for(i=0; i<iHeight; i++) {
+      write(hFileOutput, pbBuf+i*iStride, iWidth);
+    }
+
+    if(pPic->iYUVFormat != YUV400) {
+      //U;
+      pbBuf = pPic->pU;
+      for(i=0; i<iHeightUV; i++) {
+        write(hFileOutput, pbBuf+i*iStrideUV, iWidthUV);
+      }
+      //V;
+      pbBuf = pPic->pV;
+      for(i=0; i<iHeightUV; i++) {
+        write(hFileOutput, pbBuf+i*iStrideUV, iWidthUV);
+      }
+
+    }    
+  }
+}
+
+
 /*!
  ***********************************************************************
  * \brief
@@ -240,6 +328,7 @@ int main(int argc, char **argv)
 
      if (metadata) {
        /* Lets process and free the metadata relative to the current frame */
+       extracted_metadata_apply_on_frame(metadata, pDecPicList);
        extracted_metadata_save(metadata, 1);
        extracted_metadata_free(metadata);
      

@@ -177,11 +177,11 @@ ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int fram
     static uint32_t bounding_box_id           = 0;
     ExtractedObjectBoundingBox * bounding_box = malloc(sizeof(ExtractedObjectBoundingBox));
 
-    bounding_box->id         = bounding_box_id;
-    bounding_box->x = x;
-    bounding_box->y = y;
-    bounding_box->width      = width;
-    bounding_box->height     = height;
+    bounding_box->id     = bounding_box_id;
+    bounding_box->x      = x;
+    bounding_box->y      = y;
+    bounding_box->width  = width;
+    bounding_box->height = height;
 
     extracted_metadata_init((ExtractedMetadata *) bounding_box,
                              extracted_object_bounding_box_free,
@@ -195,6 +195,48 @@ ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int fram
     return bounding_box;
 }
 
+ExtractedObjectBoundingBox * extracted_object_bounding_box_from_metadata(ExtractedMetadata * metadata)
+{
+  if (metadata->type == ExtractedMetadataObjectBoundingBox) {
+    return (ExtractedObjectBoundingBox *) metadata;
+  }
+
+  return NULL;
+}
+
+void extracted_object_bounding_box_get_data(ExtractedObjectBoundingBox * box,
+                                            unsigned int * id,
+                                            unsigned int * x,
+                                            unsigned int * y,
+                                            unsigned int * width,
+                                            unsigned int * height)
+{
+
+  if (!box) {
+    return;
+  }
+
+  if (id) {
+    *id = box->id;
+  }
+
+  if (x) {
+    *x = box->x;
+  }
+
+  if (y) {
+    *y = box->y;
+  }
+
+  if (width) {
+    *width = box->width;
+  }
+
+  if (height) {
+    *height = box->height;
+  }
+
+}
 
 /*
  ************************************

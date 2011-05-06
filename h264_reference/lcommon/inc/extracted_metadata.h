@@ -23,7 +23,7 @@ typedef struct _ExtractedObjectBoundingBox ExtractedObjectBoundingBox;
 
 /*!
  *******************************************************************************
- * Creates a new extracted image, the image only has the luma plane (Y).
+ * Creates a new extracted object bounding box.
  *
  * @param frame_num The frame number this metadata belongs.
  * @param x The x coordinate of the bounding box.
@@ -35,6 +35,41 @@ typedef struct _ExtractedObjectBoundingBox ExtractedObjectBoundingBox;
  *******************************************************************************
  */
 ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int frame_num, int x, int y, int width, int height);
+
+
+/*!
+ *******************************************************************************
+ *  Gets data about an object bouding box, any parameter can be ommited 
+ *  (passing NULL) if you are not interested on it.
+ *
+ * @param box The ExtractedObjectBoundingBox object.
+ * @param id The id of the bounding box. (OUT) (Optional)
+ * @param x The x coordinate of the bouding box. (OUT) (Optional)
+ * @param y The y coordinate of the bounding box. (OUT) (Optional)
+ * @param width The width of the bounding box. (OUT) (Optional)
+ * @param height The height of the bounding box. (OUT) (Optional)
+ *
+ *******************************************************************************
+ */
+void extracted_object_bounding_box_get_data(ExtractedObjectBoundingBox * box, 
+                                            unsigned int * id,
+                                            int * x,
+                                            int * y,
+                                            int * width,
+                                            int * height);
+
+
+/*!
+ *********************************************************************************
+ * If the given metadata is of the type ExtractedObjectBoundingBox,
+ * returns the ExtractedObjectBoundingBox object, NULL otherwise.
+ *
+ * @param metadata The metadata object.
+ * @return The ExtractedObjectBoundingBox object or NULL if the type is not right.
+ *
+ *********************************************************************************
+ */
+ExtractedObjectBoundingBox * extracted_object_bounding_box_from_metadata(ExtractedMetadata * metadata);
 
 
 /* ExtractedYImage API */
@@ -51,6 +86,7 @@ ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int fram
  *******************************************************************************
  */
 ExtractedYImage * extracted_y_image_new(unsigned int frame_num, int width, int height);
+
 
 /*!
  *******************************************************************************
