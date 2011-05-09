@@ -280,6 +280,14 @@ void encode_one_macroblock_highfast (Macroblock *currMB)
       } // if (enc_mb.valid[mode])
     } // for (mode=1; mode<4; mode++)
 
+    /* KATCIPIS - Good place to get ME information */
+    printf("\n== start encode_one_macroblock_highfast ==\n");
+    printf("mb frame_num: [%d]\n", currMB->p_Vid->frame_num);
+    printf("mb pix_x[%d] pix_y[%d] pix_c_x[%d] pix_c_y[%d]\n", 
+           currMB->pix_x, currMB->pix_y, currMB->pix_c_x, currMB->pix_c_y);
+    printf("== done encode_one_macroblock_highfast ==\n");
+    /* KATCIPIS - Done */
+
     if ((!inter_skip) && enc_mb.valid[P8x8])
     {
       currMB->valid_8x8 = FALSE;
