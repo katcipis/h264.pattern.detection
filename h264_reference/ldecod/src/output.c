@@ -444,6 +444,8 @@ static void decoder_draw_bounding_box(ExtractedMetadata * metadata, StorablePict
   int box_y                                 = 0;
   int box_width                             = 0;
   int box_height                            = 0;
+  int row                                   = 0;
+  int col                                   = 0;
 
   if (!bounding_box) {
     return;
@@ -451,9 +453,27 @@ static void decoder_draw_bounding_box(ExtractedMetadata * metadata, StorablePict
 
   extracted_object_bounding_box_get_data(bounding_box, NULL, &box_x, &box_y, &box_width, &box_height);
 
+  printf("decoder_draw_bounding_box: size_x[%d], size_y[%d], size_x_cr[%d], size_y_cr[%d]\n", 
+                                     p->size_x, p->size_y, p->size_x_cr, p->size_y_cr);
+
   /* Validate bounding box */
+  if ( (box_x + box_width > p->size_x) ||
+       (box_y + box_height > p->size_y)) {
+      printf("decoder_draw_bounding_box: ERROR: bouding box out of the frame !!!\n");
+      return;
+  }
 
   /* drawn bounding box */
+
+  for (row = box_x; row < box_x + box_width; row++) {
+
+    for (col = box_y; col < box_y + box_height; col++) {
+      printf("decoder_draw_bounding_box: p->imgY[%d][%d]\n", row, col);
+      p->imgY[row][col] = 0;
+    } 
+   
+  }
+
 }
 
 /*!
@@ -497,10 +517,12 @@ static void write_out_picture(VideoParameters *p_Vid, StorablePicture *p, int p_
     return;
 
   /* KATCIPIS - This seems the best place to do some process on the decoded frame, right before it is written on the file. */
+  static int frameCount        = 0;
+  ExtractedMetadata * metadata = extracted_metadata_buffer_get(p_Vid->metadata_buffer, frameCount);
 
-  ExtractedMetadata * metadata = extracted_metadata_buffer_get(p_Vid->metadata_buffer, 1);
+  printf("KMLO: frameCount[%d]\n", frameCount);
+  frameCount++;
 
-  //printf("KMLO: p_Vid->frame_num[%d]\n", p_Vid->frame_num);
   if (metadata) {
     /* Lets process and free the metadata relative to the current frame */
    decoder_draw_bounding_box(metadata, p);
