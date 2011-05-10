@@ -465,10 +465,9 @@ static void decoder_draw_bounding_box(ExtractedMetadata * metadata, StorablePict
 
   /* drawn bounding box */
 
-  for (row = box_x; row < box_x + box_width; row++) {
+  for (row = box_y; row < box_y + box_height; row++) {
 
-    for (col = box_y; col < box_y + box_height; col++) {
-      printf("decoder_draw_bounding_box: p->imgY[%d][%d]\n", row, col);
+    for (col = box_x; col < box_x + box_width; col++) {
       p->imgY[row][col] = 0;
     } 
    
