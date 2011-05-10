@@ -123,21 +123,16 @@ static int WriteOneFrame(DecodedPicList *pDecPic, int hFileOutput0, int hFileOut
    
     do
     {
-      printf("KMLO DO MAL \n");
-
       if(pPic->iYUVStorageFormat==2)
         hFileOutput = (pPic->iViewId&0xffff)? hFileOutput1 : hFileOutput0;
       else
         hFileOutput = hFileOutput0;
-
-      printf("KMLO hFileOutput[%d]\n", hFileOutput);
 
       if(hFileOutput >=0)
       {
         //Y;
         pbBuf = pPic->pY;
 
-        printf("KMLO 1: writing[%d] from[%d] to[%d]\n", iHeight, 0, iWidth);
         for(i=0; i < iHeight; i++) {
           memset(pbBuf+i*iStride, 0, iWidth);
         }
@@ -169,7 +164,6 @@ static int WriteOneFrame(DecodedPicList *pDecPic, int hFileOutput0, int hFileOut
           //Y;
           pbBuf = pPic->pY+iPicSize;
 
-          printf("KMLO 2: writing[%d] from[%d] to[%d]\n", iHeight, 0, iWidth);
           for(i=0; i < iHeight; i++) {
             memset(pbBuf+i*iStride, 0, iWidth);
           }
@@ -208,100 +202,6 @@ static int WriteOneFrame(DecodedPicList *pDecPic, int hFileOutput0, int hFileOut
 
   return iOutputFrame;
 }
-
-/* KATCIPIS - added to do the bounding box drawing */
-/*!
- ***********************************************************************
- * \brief
- *    Draws a bouding box on the frame.
- ***********************************************************************
- */
-static void decoder_draw_bounding_box(ExtractedMetadata * metadata, DecodedPicList *pPic)
-{
-  ExtractedObjectBoundingBox * bounding_box = extracted_object_bounding_box_from_metadata(metadata);
-  int box_x                                 = 0;
-  int box_y                                 = 0;
-  int box_width                             = 0;
-  int box_height                            = 0;  
- 
-  if (!bounding_box) {
-    return;
-  }
-
-  extracted_object_bounding_box_get_data(bounding_box, NULL, &box_x, &box_y, &box_width, &box_height);
-
-  if(pPic && (pPic->bValid == 3 || pPic->bValid == 1)) {
-
-    int i, iWidth, iHeight, iStride, iWidthUV, iHeightUV, iStrideUV;
-    byte *pbBuf;    
-
-    iWidth  = pPic->iWidth*((pPic->iBitDepth+7)>>3);
-    iHeight = pPic->iHeight;
-    iStride = pPic->iYBufStride;
-
-    if(pPic->iYUVFormat != YUV444) {
-      iWidthUV = pPic->iWidth>>1;
-    } else {
-      iWidthUV = pPic->iWidth;
-    }
-
-    if(pPic->iYUVFormat == YUV420) {
-      iHeightUV = pPic->iHeight>>1;
-    } else {
-      iHeightUV = pPic->iHeight;
-    }
-
-    iWidthUV *= ((pPic->iBitDepth+7)>>3);
-    iStrideUV = pPic->iUVBufStride;
-    
-    /* lets validate our bounding box */
-    if (box_width > iWidth || box_height > iHeight) {
-      printf("decoder_draw_bounding_box: ERROR: bounding box has "
-             "width[%d] height[%d] and the frame has width[%d] height[%d]!\n", 
-             box_width, box_height, iWidth, iHeight);
-      return;
-    }
-   
-    /* We want a red bouding box. */
- 
-    //Y;
-    pbBuf = pPic->pY;
-    /*
-    printf("writing[%d] from[%d] to[%d]\n", iWidth, box_y, box_y + box_height);
-    for(i=box_y; i < box_y + box_height; i++) {
-      memset(pbBuf+i*iStride, 0, iWidth);
-    } */
-
-    printf("writing[%d] from[%d] to[%d]\n", iHeight, 0, iWidth);
-    for(i=0; i < iHeight; i++) {
-      memset(pbBuf+i*iStride, 0, iWidth);
-    }
-
-    #if 0
-    if(pPic->iYUVFormat != YUV400) {
-      /* lets calculate the bounding box to the chroma components */
-      float ratio       = (float) iWidth / (float) iWidthUV;
-      int box_uv_x      = floor(box_x / ratio);
-      int box_uv_y      = floor(box_y / ratio);
-      int box_uv_height = floor(box_height / ratio);
-      int box_uv_width  = floor(box_width / ratio);
-
-      //U;
-      pbBuf = pPic->pU;
-      for(i=0; i<iHeightUV; i++) {
-        write(hFileOutput, pbBuf+i*iStrideUV, iWidthUV);
-      }
-      //V;
-      pbBuf = pPic->pV;
-      for(i=0; i<iHeightUV; i++) {
-        write(hFileOutput, pbBuf+i*iStrideUV, iWidthUV);
-      }
-
-    }
-    #endif    
-  }
-}
-
 
 /*!
  ***********************************************************************
@@ -346,21 +246,6 @@ int main(int argc, char **argv)
     if(iRet==DEC_EOS || iRet==DEC_SUCCEED)
     {
       //process the decoded picture, output or display;
-  
-     /* KATCIPIS - This seems the best place to do some process on the decoded frame, right before it is written on the file. */
-     ExtractedMetadata * metadata = extracted_metadata_buffer_get(metadata_buffer, iFramesDecoded);
-
-     if (metadata) {
-       /* Lets process and free the metadata relative to the current frame */
-       //decoder_draw_bounding_box(metadata, pDecPicList);
-       extracted_metadata_save(metadata, 1);
-       extracted_metadata_free(metadata);
-     
-       /* Next frame does not have a metadata yet */
-       metadata = NULL;
-     }
-     /* KATCIPIS - end of metadata processing on the decoded frame. */ 
-  
       iFramesOutput += WriteOneFrame(pDecPicList, hFileDecOutput0, hFileDecOutput1, 0);
       iFramesDecoded++;
     }

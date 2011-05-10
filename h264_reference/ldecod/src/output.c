@@ -21,6 +21,7 @@
 #include "sei.h"
 #include "input.h"
 #include "fast_memory.h"
+#include "extracted_metadata.h"
 
 static void write_out_picture(VideoParameters *p_Vid, StorablePicture *p, int p_out);
 static void img2buf_byte   (imgpel** imgX, unsigned char* buf, int size_x, int size_y, int symbol_size_in_bytes, int crop_left, int crop_right, int crop_top, int crop_bottom, int iOutStride);
@@ -429,6 +430,32 @@ void write_picture(VideoParameters *p_Vid, StorablePicture *p, int p_out, int re
 #endif
 
 
+/* KATCIPIS - added to do the bounding box drawing */
+/*!
+ ***********************************************************************
+ * \brief
+ *    Draws a bouding box on the frame.
+ ***********************************************************************
+ */
+static void decoder_draw_bounding_box(ExtractedMetadata * metadata, StorablePicture *p)
+{
+  ExtractedObjectBoundingBox * bounding_box = extracted_object_bounding_box_from_metadata(metadata);
+  int box_x                                 = 0;
+  int box_y                                 = 0;
+  int box_width                             = 0;
+  int box_height                            = 0;
+
+  if (!bounding_box) {
+    return;
+  }
+
+  extracted_object_bounding_box_get_data(bounding_box, NULL, &box_x, &box_y, &box_width, &box_height);
+
+  /* Validate bounding box */
+
+  /* drawn bounding box */
+}
+
 /*!
 ************************************************************************
 * \brief
@@ -468,6 +495,23 @@ static void write_out_picture(VideoParameters *p_Vid, StorablePicture *p, int p_
 
   if (p->non_existing)
     return;
+
+  /* KATCIPIS - This seems the best place to do some process on the decoded frame, right before it is written on the file. */
+
+  ExtractedMetadata * metadata = extracted_metadata_buffer_get(p_Vid->metadata_buffer, 1);
+
+  //printf("KMLO: p_Vid->frame_num[%d]\n", p_Vid->frame_num);
+  if (metadata) {
+    /* Lets process and free the metadata relative to the current frame */
+   decoder_draw_bounding_box(metadata, p);
+   extracted_metadata_save(metadata, 1);
+   extracted_metadata_free(metadata);
+
+   /* Next frame does not have a metadata yet */
+   metadata = NULL;
+ }
+
+ /* KATCIPIS - end of metadata processing on the decoded frame. */
 
 
 #if (ENABLE_OUTPUT_TONEMAPPING)
