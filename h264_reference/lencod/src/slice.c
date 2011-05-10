@@ -559,7 +559,14 @@ int encode_one_slice (VideoParameters *p_Vid, int SliceGroupId, int TotalCodedMB
 
       currSlice->encode_one_macroblock (currMB);
       end_encode_one_macroblock(currMB);
-
+      /* KATCIPIS - Good place to get ME information */
+      printf("\n== start encode_one_macroblock_high ==\n");
+      printf("mb frame_num: [%d]\n", currMB->p_Vid->frame_num);
+      printf("mb pix_x[%d] pix_y[%d] pix_c_x[%d] pix_c_y[%d]\n",
+             currMB->pix_x, currMB->pix_y, currMB->pix_c_x, currMB->pix_c_y);
+      printf("min_rdcost[%d] min_dcost[%d] best_mode[%d]\n", currMB->min_rdcost, currMB->min_dcost, currMB->best_mode);
+      printf("== done encode_one_macroblock_high ==\n");
+      /* KATCIPIS - Done */
       write_macroblock (currMB, 1);
     }
 
