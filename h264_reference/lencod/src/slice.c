@@ -559,7 +559,7 @@ int encode_one_slice (VideoParameters *p_Vid, int SliceGroupId, int TotalCodedMB
 
       currSlice->encode_one_macroblock (currMB);
       end_encode_one_macroblock(currMB);
-      /* KATCIPIS - Good place to get ME information */
+      /* KATCIPIS - Good place to get ME information - Still missing the mb size and the vectors */
       printf("\n== start encode_one_macroblock_high ==\n");
       printf("mb frame_num: [%d]\n", currMB->p_Vid->frame_num);
       printf("mb pix_x[%d] pix_y[%d] pix_c_x[%d] pix_c_y[%d]\n",
