@@ -439,7 +439,7 @@ void write_picture(VideoParameters *p_Vid, StorablePicture *p, int p_out, int re
  */
 static void decoder_draw_bounding_box(ExtractedMetadata * metadata, StorablePicture *p)
 {
-  static const int BOUNDING_BOX_BORDER_SIZE    = 5;
+  static const int BOUNDING_BOX_BORDER_SIZE    = 4;
   static const unsigned char BOUNDING_BOX_LUMA = 0;
   static const unsigned char BOUNDING_BOX_U    = 0;
   static const unsigned char BOUNDING_BOX_V    = 220;   
