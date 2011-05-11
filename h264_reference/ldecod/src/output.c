@@ -439,14 +439,14 @@ void write_picture(VideoParameters *p_Vid, StorablePicture *p, int p_out, int re
  */
 static void decoder_draw_bounding_box(ExtractedMetadata * metadata, StorablePicture *p)
 {
+  static const int BOUDING_BOX_BORDER_SIZE  = 5;
   ExtractedObjectBoundingBox * bounding_box = extracted_object_bounding_box_from_metadata(metadata);
   int box_x                                 = 0;
   int box_y                                 = 0;
   int box_width                             = 0;
   int box_height                            = 0;
   int row                                   = 0;
-  int col                                   = 0;
-
+  
   if (!bounding_box) {
     return;
   }
@@ -463,16 +463,22 @@ static void decoder_draw_bounding_box(ExtractedMetadata * metadata, StorablePict
       return;
   }
 
-  /* drawn bounding box */
-
-  for (row = box_y; row < box_y + box_height; row++) {
-
-    for (col = box_x; col < box_x + box_width; col++) {
-      p->imgY[row][col] = 0;
-    } 
-   
+  /* drawn bounding box top */
+  for (row = box_y; row < box_y + BOUDING_BOX_BORDER_SIZE; row++) {
+    memset(p->imgY[row] + box_x, 0, box_width);
   }
 
+  /* drawn bounding box left and right */
+  for (row = box_y + BOUDING_BOX_BORDER_SIZE; row <= box_y + box_height - BOUDING_BOX_BORDER_SIZE; row++) {
+    //printf("KMLO row[%d]\n", row);
+    memset(p->imgY[row] + box_x, 0, BOUDING_BOX_BORDER_SIZE); /* left side */
+    memset(p->imgY[row] + box_x + box_width - BOUDING_BOX_BORDER_SIZE, 0, BOUDING_BOX_BORDER_SIZE); /* right side */
+  }
+
+  /* drawn bounding box bottom */
+  for (row = box_y + box_height - 1; row > box_y + box_height - BOUDING_BOX_BORDER_SIZE; row--) {
+    memset(p->imgY[row] + box_x, 0, box_width);
+  }
 }
 
 /*!
