@@ -457,8 +457,8 @@ static void decoder_draw_bounding_box(ExtractedMetadata * metadata, StorablePict
 
   extracted_object_bounding_box_get_data(bounding_box, NULL, &box_x, &box_y, &box_width, &box_height);
 
-  printf("decoder_draw_bounding_box: size_x[%d], size_y[%d], size_x_cr[%d], size_y_cr[%d]\n", 
-                                     p->size_x, p->size_y, p->size_x_cr, p->size_y_cr);
+  /* printf("decoder_draw_bounding_box: size_x[%d], size_y[%d], size_x_cr[%d], size_y_cr[%d]\n", 
+                                     p->size_x, p->size_y, p->size_x_cr, p->size_y_cr); */
 
   /* Validate bounding box */
   if ( (box_x + box_width > p->size_x) ||
