@@ -439,14 +439,18 @@ void write_picture(VideoParameters *p_Vid, StorablePicture *p, int p_out, int re
  */
 static void decoder_draw_bounding_box(ExtractedMetadata * metadata, StorablePicture *p)
 {
-  static const int BOUDING_BOX_BORDER_SIZE  = 5;
+  static const int BOUNDING_BOX_BORDER_SIZE    = 5;
+  static const unsigned char BOUNDING_BOX_LUMA = 0;
+  static const unsigned char BOUNDING_BOX_U    = 0;
+  static const unsigned char BOUNDING_BOX_V    = 220;   
+
   ExtractedObjectBoundingBox * bounding_box = extracted_object_bounding_box_from_metadata(metadata);
   int box_x                                 = 0;
   int box_y                                 = 0;
   int box_width                             = 0;
   int box_height                            = 0;
   int row                                   = 0;
-  
+ 
   if (!bounding_box) {
     return;
   }
@@ -463,22 +467,63 @@ static void decoder_draw_bounding_box(ExtractedMetadata * metadata, StorablePict
       return;
   }
 
+  /* lets drawn on the luma information */
+
   /* drawn bounding box top */
-  for (row = box_y; row < box_y + BOUDING_BOX_BORDER_SIZE; row++) {
-    memset(p->imgY[row] + box_x, 0, box_width);
+  for (row = box_y; row < box_y + BOUNDING_BOX_BORDER_SIZE; row++) {
+    memset(p->imgY[row] + box_x, BOUNDING_BOX_LUMA, box_width);
   }
 
   /* drawn bounding box left and right */
-  for (row = box_y + BOUDING_BOX_BORDER_SIZE; row <= box_y + box_height - BOUDING_BOX_BORDER_SIZE; row++) {
+  for (row = box_y + BOUNDING_BOX_BORDER_SIZE; row <= box_y + box_height - BOUNDING_BOX_BORDER_SIZE; row++) {
     //printf("KMLO row[%d]\n", row);
-    memset(p->imgY[row] + box_x, 0, BOUDING_BOX_BORDER_SIZE); /* left side */
-    memset(p->imgY[row] + box_x + box_width - BOUDING_BOX_BORDER_SIZE, 0, BOUDING_BOX_BORDER_SIZE); /* right side */
+    memset(p->imgY[row] + box_x, BOUNDING_BOX_LUMA, BOUNDING_BOX_BORDER_SIZE); /* left side */
+    memset(p->imgY[row] + box_x + box_width - BOUNDING_BOX_BORDER_SIZE, BOUNDING_BOX_LUMA, BOUNDING_BOX_BORDER_SIZE); /* right side */
   }
 
   /* drawn bounding box bottom */
-  for (row = box_y + box_height - 1; row > box_y + box_height - BOUDING_BOX_BORDER_SIZE; row--) {
-    memset(p->imgY[row] + box_x, 0, box_width);
+  for (row = box_y + box_height - 1; row > box_y + box_height - BOUNDING_BOX_BORDER_SIZE; row--) {
+    memset(p->imgY[row] + box_x, BOUNDING_BOX_LUMA, box_width);
   }
+
+  if (p->imgUV) {
+    /* lets draw on the chroma information */
+    float luma_chroma_x_ratio = p->size_x / p->size_x_cr;
+    float luma_chroma_y_ratio = p->size_y / p->size_y_cr;
+
+    /* drawn bounding box top */
+    for (row = box_y / luma_chroma_y_ratio;
+         row < (box_y + BOUNDING_BOX_BORDER_SIZE) / luma_chroma_y_ratio; row++) {
+
+      memset(p->imgUV[0][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_U, box_width / luma_chroma_x_ratio);
+      memset(p->imgUV[1][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_V, box_width / luma_chroma_x_ratio);
+    }
+
+    int chroma_side_border_size = BOUNDING_BOX_BORDER_SIZE / luma_chroma_x_ratio;
+
+    /* drawn bounding box left and right */
+    for (row = (box_y + BOUNDING_BOX_BORDER_SIZE) / luma_chroma_y_ratio; 
+         row <= (box_y + box_height - BOUNDING_BOX_BORDER_SIZE) / luma_chroma_y_ratio; row++) {
+
+      memset(p->imgUV[0][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_U, chroma_side_border_size); /* left side */
+      memset(p->imgUV[0][row] + (int) ((box_x + box_width - BOUNDING_BOX_BORDER_SIZE) / luma_chroma_x_ratio), 
+                                       BOUNDING_BOX_U, chroma_side_border_size); /* right side */
+
+      memset(p->imgUV[1][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_V, chroma_side_border_size); /* left side */
+      memset(p->imgUV[1][row] + (int) ((box_x + box_width - BOUNDING_BOX_BORDER_SIZE) / luma_chroma_x_ratio), 
+                                       BOUNDING_BOX_V, chroma_side_border_size); /* right side */
+    }
+
+    /* drawn bounding box bottom */
+    for (row = (box_y + box_height - 1) / luma_chroma_y_ratio; 
+         row > (box_y + box_height - BOUNDING_BOX_BORDER_SIZE) / luma_chroma_y_ratio; row--) {
+
+      memset(p->imgUV[0][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_U, box_width / luma_chroma_x_ratio);
+      memset(p->imgUV[1][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_V, box_width / luma_chroma_x_ratio);
+    }
+
+  }
+
 }
 
 /*!
@@ -522,16 +567,14 @@ static void write_out_picture(VideoParameters *p_Vid, StorablePicture *p, int p_
     return;
 
   /* KATCIPIS - This seems the best place to do some process on the decoded frame, right before it is written on the file. */
-  static int frameCount        = 0;
+  static int frameCount        = 0; /* Is this the best way to get the frame number ? */
   ExtractedMetadata * metadata = extracted_metadata_buffer_get(p_Vid->metadata_buffer, frameCount);
 
-  printf("KMLO: frameCount[%d]\n", frameCount);
   frameCount++;
 
   if (metadata) {
     /* Lets process and free the metadata relative to the current frame */
    decoder_draw_bounding_box(metadata, p);
-   extracted_metadata_save(metadata, 1);
    extracted_metadata_free(metadata);
 
    /* Next frame does not have a metadata yet */
