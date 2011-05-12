@@ -157,3 +157,19 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned int 
 
   return (ExtractedMetadata *) extracted_object_bounding_box_new(frame_num, res->x, res->y, res->width, res->height);
 }
+
+/***************************** 
+ * ObjectTracking facilities * 
+ *****************************/
+void metadata_extractor_add_motion_estimation_info(unsigned int frame_number,
+                                                   short mb_x, 
+                                                   short mb_y,
+                                                   short x_motion_estimation,
+                                                   short y_motion_estimation)
+{
+  /*
+  printf("metadata_extractor_add_motion_estimation_info:");
+  printf("frame_number[%d] mb_x[%d] mb_y[%d] x_motion_estimation[%d] y_motion_estimation[%d]\n", 
+          frame_number, mb_x, mb_y, x_motion_estimation, y_motion_estimation);
+  */
+}

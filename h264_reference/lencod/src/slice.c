@@ -62,6 +62,7 @@
 #include "rd_intra_jm.h"
 #include "rd_intra_jm444.h"
 
+#include "metadata_extractor.h"
 
 // Local declarations
 static Slice *malloc_slice(VideoParameters *p_Vid, InputParameters *p_Inp);
@@ -560,12 +561,12 @@ int encode_one_slice (VideoParameters *p_Vid, int SliceGroupId, int TotalCodedMB
       currSlice->encode_one_macroblock (currMB);
       end_encode_one_macroblock(currMB);
       /* KATCIPIS - Good place to get ME information - Still missing the mb size and the vectors */
-      printf("\n== start encode_one_macroblock_high ==\n");
-      printf("mb frame_num: [%d]\n", currMB->p_Vid->frame_num);
-      printf("mb pix_x[%d] pix_y[%d] pix_c_x[%d] pix_c_y[%d]\n",
-             currMB->pix_x, currMB->pix_y, currMB->pix_c_x, currMB->pix_c_y);
-      printf("min_rdcost[%d] min_dcost[%d] best_mode[%d]\n", currMB->min_rdcost, currMB->min_dcost, currMB->best_mode);
-      printf("== done encode_one_macroblock_high ==\n");
+      metadata_extractor_add_motion_estimation_info(currMB->p_Vid->frame_num, 
+                                                    currMB->pix_x, 
+                                                    currMB->pix_y,
+                                                    0,
+                                                    0);
+      printf("block_x[%d] block_y[%d] mb_type[%d]\n", currMB->block_x, currMB->block_y, currMB->mb_type);
       /* KATCIPIS - Done */
       write_macroblock (currMB, 1);
     }
