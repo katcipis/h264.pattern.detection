@@ -561,20 +561,6 @@ int encode_one_slice (VideoParameters *p_Vid, int SliceGroupId, int TotalCodedMB
       currSlice->encode_one_macroblock (currMB);
       end_encode_one_macroblock(currMB);
 
-      /* KATCIPIS - Old place to get ME information - Still missing the mb size and the vectors */
-
-      PicMotionParams **mv_info  = p_Vid->enc_picture->mv_info;
-      PicMotionParams *mv_info_p = &mv_info[currMB->block_y][currMB->block_x];
-
-      metadata_extractor_add_motion_estimation_info(currMB->p_Vid->frame_num, 
-                                                    currMB->pix_x, 
-                                                    currMB->pix_y,
-                                                    currSlice->all_mv[LIST_0][0][currMB->mb_type][currMB->block_y][currMB->block_x].mv_x,
-                                                    currSlice->all_mv[LIST_0][0][currMB->mb_type][currMB->block_y][currMB->block_x].mv_y);
-      printf("block_x[%d] block_y[%d] mb_type[%d]\n", currMB->block_x, currMB->block_y, currMB->mb_type);
-
-      /* KATCIPIS - Done */
-
       write_macroblock (currMB, 1);
     }
 
@@ -594,6 +580,20 @@ int encode_one_slice (VideoParameters *p_Vid, int SliceGroupId, int TotalCodedMB
         end_of_slice = TRUE;
       }
       NumberOfCodedMBs++;       // only here we are sure that the coded MB is actually included in the slice
+
+      /* KATCIPIS - Old place to get ME information - Still missing the mb size and the vectors */
+
+      PicMotionParams **mv_info  = p_Vid->enc_picture->mv_info;
+      PicMotionParams *mv_info_p = &mv_info[currMB->block_y][currMB->block_x];
+
+      metadata_extractor_add_motion_estimation_info(currMB->p_Vid->frame_num, 
+                                                    currMB->pix_x, 
+                                                    currMB->pix_y,
+                                                    mv_info_p->mv[LIST_0].mv_x,
+                                                    mv_info_p->mv[LIST_0].mv_y);
+
+      /* KATCIPIS - Done */
+
       next_macroblock (currMB);
     }
     else

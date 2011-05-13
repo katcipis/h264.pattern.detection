@@ -162,6 +162,40 @@ void MbAffPostProc(VideoParameters *p_Vid)
   }
 }
 
+
+static void get_motion_estimation_information(VideoParameters * p_Vid)
+{
+  PicMotionParams **mv_info = p_Vid->enc_picture->mv_info;
+  int MbQAddr;
+  
+  for (MbQAddr=0; MbQAddr < p_Vid->PicSizeInMbs; MbQAddr++)
+  {
+    Macroblock *MbQ = &(p_Vid->mb_data[MbQAddr]) ; /* current Mb */
+    short mb_x      = 0;
+    short mb_y      = 0;
+    int blkP        = 0;
+    int blkQ        = 0;
+    int idx         = 0;
+
+    get_mb_pos (p_Vid, MbQAddr, p_Vid->mb_size[IS_LUMA], &mb_x, &mb_y);
+
+    get_mb_block_pos_normal (MbQ->mbAddrX, &mb_x, &mb_y);
+
+    mb_x <<= 2;
+    mb_y <<= 2;
+
+    for( idx = 0 ; idx < MB_BLOCK_SIZE ; idx += BLOCK_SIZE ) {
+      int blk_y                  = mb_y; //+ (blkQ >> 2);
+      int blk_x                  = mb_x; //+ (blkQ  & 3);  
+      PicMotionParams *mv_info_p = &mv_info[blk_y ][blk_x ];
+ 
+      if (mv_info_p->mv[LIST_0].mv_x != 0 || mv_info_p->mv[LIST_0].mv_y != 0) {
+        printf("KMLO mv_info_p->mv[LIST_0].mv_x[%d] mv_info_p->mv[LIST_0].mv_y[%d]\n", mv_info_p->mv[LIST_0].mv_x, mv_info_p->mv[LIST_0].mv_y);
+      }
+    }
+  }
+}
+
 /*!
  ************************************************************************
  * \brief
@@ -233,17 +267,11 @@ static void code_a_plane(VideoParameters *p_Vid, InputParameters *p_Inp)
     else
       distortion.value[0] = distortion.value[1] = distortion.value[2] = 0;
 
-    /* KATCIPIS - Good place to get ME information - Still missing the mb size and the vectors 
-    PicMotionParams **mv_info  = p_Vid->enc_picture->mv_info;
-    PicMotionParams *mv_info_p = &mv_info[currMB->block_y][currMB->block_x];
+    /* KATCIPIS - Good place to get ME information - Still missing the mb size and the vectors */
 
-    metadata_extractor_add_motion_estimation_info(currMB->p_Vid->frame_num,
-                                                  currMB->pix_x,
-                                                  currMB->pix_y,
-                                                  mv_info_p[LIST_0].mv->mv_x,
-                                                  mv_info_p[LIST_0].mv->mv_y);
-    printf("block_x[%d] block_y[%d] mb_type[%d]\n", currMB->block_x, currMB->block_y, currMB->mb_type);
-    KATCIPIS - Done */
+    get_motion_estimation_information(p_Vid);
+    
+    /* KATCIPIS - Done */
 
     DeblockFrame (p_Vid, p_Vid->enc_picture->imgY, p_Vid->enc_picture->imgUV); //comment out to disable deblocking filter
 
