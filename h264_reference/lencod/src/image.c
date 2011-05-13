@@ -163,34 +163,153 @@ void MbAffPostProc(VideoParameters *p_Vid)
 }
 
 
+/*!
+ ************************************************************************
+ * \brief
+ *    Gather some information about motion estimation. (KATCIPIS)
+ *
+ ************************************************************************
+ */
+static void get_motion_estimation_information_horizontal(VideoParameters * p_Vid, Macroblock *MbQ, int edge)
+{
+  /* This is got from GetStrengthHor() on loop_filter_normal.c */
+
+  if ((MbQ->mb_type==I4MB||MbQ->mb_type==I8MB||MbQ->mb_type==I16MB||MbQ->mb_type==IPCM))
+  {
+    return;
+  }
+
+  PixelPos pixMB;
+  Macroblock *MbP;
+  int yQ = (edge < 16 ? edge - 1: 0);
+
+  getNonAffNeighbour(MbQ, 0, yQ, p_Vid->mb_size[IS_LUMA], &pixMB);
+  MbP = (edge) ? MbQ : &(p_Vid->mb_data[pixMB.mb_addr]);
+
+  if ((MbP->mb_type==I4MB||MbP->mb_type==I8MB||MbP->mb_type==I16MB||MbP->mb_type==IPCM)){
+    return;
+  }
+
+  PixelPos pixP             = pixMB;
+  PicMotionParams **mv_info = p_Vid->enc_picture->mv_info;
+  int      blkP, blkQ, idx;
+  short    mb_x, mb_y;
+
+  get_mb_block_pos_normal (MbQ->mbAddrX, &mb_x, &mb_y);
+  mb_x <<= 2;
+  mb_y <<= 2;
+  yQ ++;
+
+  for( idx = 0 ; idx < MB_BLOCK_SIZE ; idx += BLOCK_SIZE ) {
+    pixP.x = (short) (pixMB.x + idx);
+    pixP.pos_x =  (short) (pixMB.pos_x + idx);
+
+    blkQ = (yQ & 0xFFFC) + (idx >> 2);
+    blkP = (pixP.y & 0xFFFC) + (pixP.x >> 2);
+
+    int blk_y  = mb_y + (blkQ >> 2);
+    int blk_x  = mb_x + (blkQ  & 3);
+    PicMotionParams *mv_info_p = &mv_info[blk_y ][blk_x ];
+
+    if (mv_info_p->mv[LIST_0].mv_x != 0 || mv_info_p->mv[LIST_0].mv_y != 0) {
+        printf("\n === start get_motion_estimation_information_horizontal === \n");
+        printf("blk_x[%d] blk_y[%d] mv_info_p->mv[LIST_0].mv_x[%d] mv_info_p->mv[LIST_0].mv_y[%d]\n", 
+                blk_x, blk_y, mv_info_p->mv[LIST_0].mv_x, mv_info_p->mv[LIST_0].mv_y);
+        printf("=== end get_motion_estimation_information_horizontal === \n");
+    }
+  }
+}
+
+/*!
+ ************************************************************************
+ * \brief
+ *    Gather some information about motion estimation. (KATCIPIS)
+ *
+ ************************************************************************
+ */
+static void get_motion_estimation_information_vertical(VideoParameters * p_Vid, Macroblock *MbQ, int edge)
+{
+  /* This is got from GetStrengthVer() on loop_filter_normal.c */
+
+  if ((MbQ->mb_type==I4MB||MbQ->mb_type==I8MB||MbQ->mb_type==I16MB||MbQ->mb_type==IPCM)) {
+    return;
+  }
+
+  int idx         = 0;
+  int xQ          = edge - 1;
+  Macroblock *MbP = NULL;
+  PixelPos pixMB;
+
+  getNonAffNeighbour(MbQ, xQ, 0, p_Vid->mb_size[IS_LUMA], &pixMB);
+  MbP = (edge) ? MbQ : &(p_Vid->mb_data[pixMB.mb_addr]);
+
+  if ((MbP->mb_type==I4MB||MbP->mb_type==I8MB||MbP->mb_type==I16MB||MbP->mb_type==IPCM)) {
+    return;
+  }
+
+  PixelPos pixP             = pixMB;
+  PicMotionParams **mv_info = p_Vid->enc_picture->mv_info;
+  short mb_x                = 0;
+  short mb_y                = 0;
+  int blkQ  = 0;
+  int blkP  = 0;
+
+  get_mb_block_pos_normal (MbQ->mbAddrX, &mb_x, &mb_y);
+
+  mb_x <<= 2;
+  mb_y <<= 2;
+
+  xQ ++;
+
+  for( idx = 0 ; idx < MB_BLOCK_SIZE ; idx += BLOCK_SIZE ) {
+
+    pixP.y = (short) (pixMB.y + idx);
+    pixP.pos_y = (short) (pixMB.pos_y + idx);
+
+    blkQ = (idx & 0xFFFC) + (xQ >> 2);
+    blkP = (pixP.y & 0xFFFC) + (pixP.x >> 2);
+
+    int blk_y = mb_y + (blkQ >> 2); 
+    int blk_x = mb_x + (blkQ  & 3); 
+
+    PicMotionParams *mv_info_p = &mv_info[blk_y][blk_x];
+ 
+    if (mv_info_p->mv[LIST_0].mv_x != 0 || mv_info_p->mv[LIST_0].mv_y != 0) {
+      printf("\n === start get_motion_estimation_information_vertical === \n");
+      printf("blk_x[%d] blk_y[%d] mv_info_p->mv[LIST_0].mv_x[%d] mv_info_p->mv[LIST_0].mv_y[%d]\n", 
+              blk_x, blk_y, mv_info_p->mv[LIST_0].mv_x, mv_info_p->mv[LIST_0].mv_y);
+      printf("=== end get_motion_estimation_information_vertical === \n");
+    }
+  }
+}
+
+/*!
+ ************************************************************************
+ * \brief
+ *    Gather some information about motion estimation. (KATCIPIS)
+ *
+ ************************************************************************
+ */
 static void get_motion_estimation_information(VideoParameters * p_Vid)
 {
-  PicMotionParams **mv_info = p_Vid->enc_picture->mv_info;
   int MbQAddr;
-  
+  /* This is got from DeblockFrame() on loopFilter.c */
+ 
   for (MbQAddr=0; MbQAddr < p_Vid->PicSizeInMbs; MbQAddr++)
   {
-    Macroblock *MbQ = &(p_Vid->mb_data[MbQAddr]) ; /* current Mb */
+    /* This is got from DeblockMb() on loopFilter.c */
+    int      edge;
     short mb_x      = 0;
     short mb_y      = 0;
-    int idx         = 0;
+    Macroblock *MbQ = &(p_Vid->mb_data[MbQAddr]) ; /* current Mb */
 
     get_mb_pos (p_Vid, MbQAddr, p_Vid->mb_size[IS_LUMA], &mb_x, &mb_y);
 
-    get_mb_block_pos_normal (MbQ->mbAddrX, &mb_x, &mb_y);
-
-    mb_x <<= 2;
-    mb_y <<= 2;
-
-    for( idx = 0 ; idx < MB_BLOCK_SIZE ; idx += BLOCK_SIZE ) {
-      int blk_y                  = mb_y; //+ (blkQ >> 2); Do i need this ?
-      int blk_x                  = mb_x; //+ (blkQ  & 3); Do i need this ?
-      PicMotionParams *mv_info_p = &mv_info[blk_y][blk_x];
- 
-      if (mv_info_p->mv[LIST_0].mv_x != 0 || mv_info_p->mv[LIST_0].mv_y != 0) {
-        printf("blk_x[%d] blk_y[%d] mv_info_p->mv[LIST_0].mv_x[%d] mv_info_p->mv[LIST_0].mv_y[%d]\n", 
-                blk_x, blk_y, mv_info_p->mv[LIST_0].mv_x, mv_info_p->mv[LIST_0].mv_y);
-      }
+    /* Vertical loop */
+    for (edge = 0; edge < 4 ; ++edge )
+    {
+      get_motion_estimation_information_vertical(p_Vid, MbQ, edge << 2);
+      get_motion_estimation_information_horizontal(p_Vid, MbQ, edge << 2);
     }
   }
 }
