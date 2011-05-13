@@ -173,8 +173,6 @@ static void get_motion_estimation_information(VideoParameters * p_Vid)
     Macroblock *MbQ = &(p_Vid->mb_data[MbQAddr]) ; /* current Mb */
     short mb_x      = 0;
     short mb_y      = 0;
-    int blkP        = 0;
-    int blkQ        = 0;
     int idx         = 0;
 
     get_mb_pos (p_Vid, MbQAddr, p_Vid->mb_size[IS_LUMA], &mb_x, &mb_y);
@@ -185,12 +183,13 @@ static void get_motion_estimation_information(VideoParameters * p_Vid)
     mb_y <<= 2;
 
     for( idx = 0 ; idx < MB_BLOCK_SIZE ; idx += BLOCK_SIZE ) {
-      int blk_y                  = mb_y; //+ (blkQ >> 2);
-      int blk_x                  = mb_x; //+ (blkQ  & 3);  
-      PicMotionParams *mv_info_p = &mv_info[blk_y ][blk_x ];
+      int blk_y                  = mb_y; //+ (blkQ >> 2); Do i need this ?
+      int blk_x                  = mb_x; //+ (blkQ  & 3); Do i need this ?
+      PicMotionParams *mv_info_p = &mv_info[blk_y][blk_x];
  
       if (mv_info_p->mv[LIST_0].mv_x != 0 || mv_info_p->mv[LIST_0].mv_y != 0) {
-        printf("KMLO mv_info_p->mv[LIST_0].mv_x[%d] mv_info_p->mv[LIST_0].mv_y[%d]\n", mv_info_p->mv[LIST_0].mv_x, mv_info_p->mv[LIST_0].mv_y);
+        printf("blk_x[%d] blk_y[%d] mv_info_p->mv[LIST_0].mv_x[%d] mv_info_p->mv[LIST_0].mv_y[%d]\n", 
+                blk_x, blk_y, mv_info_p->mv[LIST_0].mv_x, mv_info_p->mv[LIST_0].mv_y);
       }
     }
   }
