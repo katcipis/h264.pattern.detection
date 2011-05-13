@@ -72,12 +72,15 @@ static CvRect* metadata_extractor_search_for_object_of_interest(unsigned char **
   /* Lets start detection */
   init_haar_facilities();
 
+  /* The search is optimized to find only one object */
   results =  cvHaarDetectObjects (gray,
                                   classifier,
                                   storage,
                                   SCALE_FACTOR,
                                   MIN_NEIGHBORS,
-                                  CV_HAAR_DO_CANNY_PRUNING, /* skip flat regions */
+                                  CV_HAAR_FIND_BIGGEST_OBJECT | 
+                                  CV_HAAR_DO_ROUGH_SEARCH | 
+                                  CV_HAAR_DO_CANNY_PRUNING, 
                                   MIN_SIZE);
 
   /* Freeing images */
@@ -196,6 +199,8 @@ static void metadata_extractor_tracked_obj_estimate_motion(TrackedObj * obj)
     return;
   }
 
+  printf("metadata_extractor_tracked_obj_estimate_motion: motion_x[%d] motion_y[%d] motion_samples[%d]\n",
+         obj->motion_x, obj->motion_y, obj->motion_samples);
   /* A simple arithmetic mean of all the vectors */
   obj->x += obj->motion_x / obj->motion_samples;
   obj->y += obj->motion_y / obj->motion_samples;
@@ -228,7 +233,7 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned int 
                                                                    int width,
                                                                    int height)
 {
-  CvRect * rect                = NULL;
+  CvRect * rect = NULL;
 
   if (tracked_obj) {
     /* We are tracking - Since the tracking started on the previous frame, 
