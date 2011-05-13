@@ -48,7 +48,6 @@ static CvRect* metadata_extractor_search_for_object_of_interest(unsigned char **
   int frame_i = 0;
   int row     = 0;
   int col     = 0;
-  int i;
 
   /* We must write R G B with the same Y sample*/
   for (row = 0; row < height; row++) {
@@ -111,8 +110,8 @@ ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned int frame_num
   /* First we must convert the Y luma plane to BGR and them to grayscale. 
      On grayscale Y = R = G = B. Pretty simple to convert. */
 
-  ExtractedMetadata * metadata = NULL;
-  CvRect* res                  = metadata_extractor_search_for_object_of_interest(y, width, height);
+  ExtractedYImage * metadata = NULL;
+  CvRect* res                = metadata_extractor_search_for_object_of_interest(y, width, height);
 
   if (!res) {
       return NULL;
@@ -137,39 +136,155 @@ ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned int frame_num
     metadata_row++;
   }
 
-  return metadata;
+  return (ExtractedMetadata *) metadata;
 }
 
 /******************************** 
  * ObjectBoundingBox facilities * 
  ********************************/
+
+/* Private structs */
+typedef struct _TrackedObj {
+  unsigned int id;
+  short x;
+  short y;
+  short width;
+  short height;
+  int motion_x;
+  int motion_y;
+  int motion_samples;
+} TrackedObj;
+
+
+/* Private data */
+static TrackedObj* tracked_obj = NULL;
+
+
+/* Private TrackedObj functions */
+static TrackedObj * metadata_extractor_tracked_obj_new(CvRect* area)
+{
+  static unsigned int tracked_obj_id = 0;
+
+  TrackedObj * obj = malloc(sizeof(TrackedObj));
+
+  if (!obj) {
+    return NULL;
+  }
+
+  obj->x              = area->x;
+  obj->y              = area->y;
+  obj->width          = area->width;
+  obj->height         = area->height;
+  obj->motion_x       = 0;
+  obj->motion_y       = 0;
+  obj->motion_samples = 0;
+  obj->id             = tracked_obj_id;
+
+  tracked_obj_id++;
+  return obj;
+}
+
+static void metadata_extractor_tracked_obj_free(TrackedObj * obj)
+{
+  free(obj);
+}
+
+static void metadata_extractor_tracked_obj_estimate_motion(TrackedObj * obj) 
+{
+  if (obj->motion_samples == 0) {
+    printf("metadata_extractor_tracked_obj_estimate_motion: we have no motion estimation info !!\n");
+    return;
+  }
+
+  /* A simple arithmetic mean of all the vectors */
+  obj->x += obj->motion_x / obj->motion_samples;
+  obj->y += obj->motion_y / obj->motion_samples;
+
+  obj->motion_x       = 0;
+  obj->motion_y       = 0;
+  obj->motion_samples = 0;
+}
+
+static int metadata_extractor_tracked_obj_block_is_inside(short x, short y, TrackedObj * obj)
+{
+  /* Not going to intersect the block area with the object area, for simplicity */
+
+  if ( (x < obj->x) || (x > obj->x * obj->width)) {
+    /* x is out */
+    return 0;
+  }
+
+  if ( (y < obj->y) || (y > obj->y * obj->height)) {
+    /* y is out */
+    return 0;
+  }  
+
+  return 1;
+}
+
+/* Public API */
 ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned int frame_num, 
                                                                    unsigned char ** y,
                                                                    int width,
                                                                    int height)
 {
-  ExtractedMetadata * metadata = NULL;
-  CvRect* res                  = metadata_extractor_search_for_object_of_interest(y, width, height);
+  CvRect * rect                = NULL;
 
-  if (!res) {
-      return NULL;
+  if (tracked_obj) {
+    /* We are tracking - Since the tracking started on the previous frame, 
+       by now we have a full motion estimation for the object */
+    metadata_extractor_tracked_obj_estimate_motion(tracked_obj);
+    return (ExtractedMetadata *) extracted_object_bounding_box_new(tracked_obj->id, 
+                                                                   frame_num, 
+                                                                   tracked_obj->x, 
+                                                                   tracked_obj->y, 
+                                                                   tracked_obj->width, 
+                                                                   tracked_obj->height);
+  }
+  
+  rect = metadata_extractor_search_for_object_of_interest(y, width, height);
+
+  if (!rect) {
+    /* no interest object */
+    return NULL;
   }
 
-  return (ExtractedMetadata *) extracted_object_bounding_box_new(frame_num, res->x, res->y, res->width, res->height);
+  tracked_obj = metadata_extractor_tracked_obj_new(rect); 
+  return (ExtractedMetadata *) extracted_object_bounding_box_new(tracked_obj->id, 
+                                                                 frame_num, 
+                                                                 tracked_obj->x, 
+                                                                 tracked_obj->y, 
+                                                                 tracked_obj->width, 
+                                                                 tracked_obj->height);
 }
 
 /***************************** 
  * ObjectTracking facilities * 
  *****************************/
-void metadata_extractor_add_motion_estimation_info(unsigned int frame_number,
-                                                   short mb_x, 
-                                                   short mb_y,
+void metadata_extractor_add_motion_estimation_info(short blk_x, 
+                                                   short blk_y,
                                                    short x_motion_estimation,
                                                    short y_motion_estimation)
 {
+  /* Macroblock size 16X16, Block size is 4X4. (see lencod/inc/defines.h)
+     Each macroblock has 16 blocks. block_pos * 4 = real_pos */
+  short x = blk_x * 4;
+  short y = blk_y * 4;
+
+  /* first see if we are tracking an object */
+  if (!tracked_obj) {
+    return;
+  }
+
   
-  /* printf("metadata_extractor_add_motion_estimation_info:");
-  printf("frame_number[%d] mb_x[%d] mb_y[%d] x_motion_estimation[%d] y_motion_estimation[%d]\n", 
-          frame_number, mb_x, mb_y, x_motion_estimation, y_motion_estimation); */
-  
+  /* Lets test if this block is inside our object area.  */
+  if (!metadata_extractor_tracked_obj_block_is_inside(x, y, tracked_obj)) {
+    /* Ignore this block info */
+    return;
+  }
+
+  /* Since we are going to accumulate one vector to the entire object, just sum the estimation */
+  tracked_obj->motion_x += x_motion_estimation;
+  tracked_obj->motion_y += y_motion_estimation;
+  tracked_obj->motion_samples++;
 }

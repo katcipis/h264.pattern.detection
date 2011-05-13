@@ -580,20 +580,6 @@ int encode_one_slice (VideoParameters *p_Vid, int SliceGroupId, int TotalCodedMB
         end_of_slice = TRUE;
       }
       NumberOfCodedMBs++;       // only here we are sure that the coded MB is actually included in the slice
-
-      /* KATCIPIS - Old place to get ME information - Still missing the mb size and the vectors */
-
-      PicMotionParams **mv_info  = p_Vid->enc_picture->mv_info;
-      PicMotionParams *mv_info_p = &mv_info[currMB->block_y][currMB->block_x];
-
-      metadata_extractor_add_motion_estimation_info(currMB->p_Vid->frame_num, 
-                                                    currMB->pix_x, 
-                                                    currMB->pix_y,
-                                                    mv_info_p->mv[LIST_0].mv_x,
-                                                    mv_info_p->mv[LIST_0].mv_y);
-
-      /* KATCIPIS - Done */
-
       next_macroblock (currMB);
     }
     else

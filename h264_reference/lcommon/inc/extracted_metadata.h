@@ -25,6 +25,7 @@ typedef struct _ExtractedObjectBoundingBox ExtractedObjectBoundingBox;
  *******************************************************************************
  * Creates a new extracted object bounding box.
  *
+ * @param id The id of the bounding box object.
  * @param frame_num The frame number this metadata belongs.
  * @param x The x coordinate of the bounding box.
  * @param y The y coordinate of the bounding box.
@@ -34,7 +35,12 @@ typedef struct _ExtractedObjectBoundingBox ExtractedObjectBoundingBox;
  *
  *******************************************************************************
  */
-ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int frame_num, int x, int y, int width, int height);
+ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int id, 
+                                                               unsigned int frame_num, 
+                                                               int x, 
+                                                               int y, 
+                                                               int width, 
+                                                               int height);
 
 
 /*!

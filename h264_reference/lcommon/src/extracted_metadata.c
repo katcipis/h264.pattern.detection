@@ -172,12 +172,11 @@ static void extracted_object_bounding_box_serialize (ExtractedMetadata * metadat
 static int extracted_object_bounding_box_get_serialized_size(ExtractedMetadata * metadata);
 static void extracted_object_bounding_box_save(ExtractedMetadata * metadata, int fd);
 
-ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int frame_num, int x, int y, int width, int height)
+ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int id, unsigned int frame_num, int x, int y, int width, int height)
 {
-    static uint32_t bounding_box_id           = 0;
     ExtractedObjectBoundingBox * bounding_box = malloc(sizeof(ExtractedObjectBoundingBox));
 
-    bounding_box->id     = bounding_box_id;
+    bounding_box->id     = id;
     bounding_box->x      = x;
     bounding_box->y      = y;
     bounding_box->width  = width;
@@ -191,7 +190,6 @@ ExtractedObjectBoundingBox * extracted_object_bounding_box_new(unsigned int fram
                              ExtractedMetadataObjectBoundingBox,
                              frame_num);
 
-    bounding_box_id++;
     return bounding_box;
 }
 
@@ -294,7 +292,7 @@ static ExtractedMetadata * extracted_object_bounding_box_deserialize(const char 
   height = ntohs(((uint16_t *) data)[3]);
 
   /* real frame number is set on the metadata superclass deserialize method */
-  return (ExtractedMetadata *) extracted_object_bounding_box_new(0, x, y, width, height);
+  return (ExtractedMetadata *) extracted_object_bounding_box_new(id, 0, x, y, width, height);
 }
 
 static int extracted_object_bounding_box_get_serialized_size(ExtractedMetadata * metadata)

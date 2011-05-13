@@ -200,6 +200,10 @@ static void get_motion_estimation_information_horizontal(VideoParameters * p_Vid
   mb_y <<= 2;
   yQ ++;
 
+  printf("\n=== KMLO STARTING:get_motion_estimation_information_horizontal ===\n");
+  printf("KMLO INFO MACROBLOCK: mb_x[%d] mb_y[%d] block_x[%d] block_y[%d] pix_x[%d] pix_y[%d] opix_y[%d]\n",
+          MbQ->mb_x, MbQ->mb_y, MbQ->block_x, MbQ->block_y, MbQ->pix_x, MbQ->pix_y, MbQ->opix_y);
+
   for( idx = 0 ; idx < MB_BLOCK_SIZE ; idx += BLOCK_SIZE ) {
     pixP.x = (short) (pixMB.x + idx);
     pixP.pos_x =  (short) (pixMB.pos_x + idx);
@@ -211,13 +215,16 @@ static void get_motion_estimation_information_horizontal(VideoParameters * p_Vid
     int blk_x  = mb_x + (blkQ  & 3);
     PicMotionParams *mv_info_p = &mv_info[blk_y ][blk_x ];
 
-    if (mv_info_p->mv[LIST_0].mv_x != 0 || mv_info_p->mv[LIST_0].mv_y != 0) {
-        printf("\n === start get_motion_estimation_information_horizontal === \n");
-        printf("blk_x[%d] blk_y[%d] mv_info_p->mv[LIST_0].mv_x[%d] mv_info_p->mv[LIST_0].mv_y[%d]\n", 
-                blk_x, blk_y, mv_info_p->mv[LIST_0].mv_x, mv_info_p->mv[LIST_0].mv_y);
-        printf("=== end get_motion_estimation_information_horizontal === \n");
-    }
+    printf("KMLO INFO ME: blk_x[%d] blk_y[%d] mv_x[%d] mv_y[%d]\n", blk_x, blk_y, 
+           mv_info_p->mv[LIST_0].mv_x, mv_info_p->mv[LIST_0].mv_y);
+    
+    metadata_extractor_add_motion_estimation_info(blk_x, 
+                                                  blk_y,
+                                                  mv_info_p->mv[LIST_0].mv_x,
+                                                  mv_info_p->mv[LIST_0].mv_y);
   }
+
+  printf("=== KMLO END:get_motion_estimation_information_horizontal ===\n");
 }
 
 /*!
@@ -261,6 +268,11 @@ static void get_motion_estimation_information_vertical(VideoParameters * p_Vid, 
 
   xQ ++;
 
+  printf("\n=== KMLO STARTING:get_motion_estimation_information_vertical ===\n");
+  printf("KMLO INFO MACROBLOCK: mb_x[%d] mb_y[%d] block_x[%d] block_y[%d] pix_x[%d] pix_y[%d] opix_y[%d]\n",
+          MbQ->mb_x, MbQ->mb_y, MbQ->block_x, MbQ->block_y, MbQ->pix_x, MbQ->pix_y, MbQ->opix_y);
+
+
   for( idx = 0 ; idx < MB_BLOCK_SIZE ; idx += BLOCK_SIZE ) {
 
     pixP.y = (short) (pixMB.y + idx);
@@ -274,13 +286,16 @@ static void get_motion_estimation_information_vertical(VideoParameters * p_Vid, 
 
     PicMotionParams *mv_info_p = &mv_info[blk_y][blk_x];
  
-    if (mv_info_p->mv[LIST_0].mv_x != 0 || mv_info_p->mv[LIST_0].mv_y != 0) {
-      printf("\n === start get_motion_estimation_information_vertical === \n");
-      printf("blk_x[%d] blk_y[%d] mv_info_p->mv[LIST_0].mv_x[%d] mv_info_p->mv[LIST_0].mv_y[%d]\n", 
-              blk_x, blk_y, mv_info_p->mv[LIST_0].mv_x, mv_info_p->mv[LIST_0].mv_y);
-      printf("=== end get_motion_estimation_information_vertical === \n");
-    }
+    printf("KMLO INFO ME: blk_x[%d] blk_y[%d] mv_x[%d] mv_y[%d]\n", blk_x, blk_y,
+           mv_info_p->mv[LIST_0].mv_x, mv_info_p->mv[LIST_0].mv_y);
+
+    metadata_extractor_add_motion_estimation_info(MbQ->pix_x,
+                                                  MbQ->pix_y,
+                                                  mv_info_p->mv[LIST_0].mv_x,
+                                                  mv_info_p->mv[LIST_0].mv_y);
   }
+
+  printf("=== KMLO END:get_motion_estimation_information_vertical ===\n");
 }
 
 /*!
@@ -294,6 +309,8 @@ static void get_motion_estimation_information(VideoParameters * p_Vid)
 {
   int MbQAddr;
   /* This is got from DeblockFrame() on loopFilter.c */
+
+  printf("\n=== KMLO STARTING:get_motion_estimation_information ===\n");
  
   for (MbQAddr=0; MbQAddr < p_Vid->PicSizeInMbs; MbQAddr++)
   {
@@ -305,13 +322,16 @@ static void get_motion_estimation_information(VideoParameters * p_Vid)
 
     get_mb_pos (p_Vid, MbQAddr, p_Vid->mb_size[IS_LUMA], &mb_x, &mb_y);
 
-    /* Vertical loop */
+    /* Vertical/Horizontal loop */
     for (edge = 0; edge < 4 ; ++edge )
     {
       get_motion_estimation_information_vertical(p_Vid, MbQ, edge << 2);
-      get_motion_estimation_information_horizontal(p_Vid, MbQ, edge << 2);
+      /* It seems that i dont need the horizontal loop, only the vertical one */
+      //get_motion_estimation_information_horizontal(p_Vid, MbQ, edge << 2); 
     }
   }
+
+  printf("=== KMLO END:get_motion_estimation_information ===\n");
 }
 
 /*!
