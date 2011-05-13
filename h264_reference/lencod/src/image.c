@@ -233,6 +233,18 @@ static void code_a_plane(VideoParameters *p_Vid, InputParameters *p_Inp)
     else
       distortion.value[0] = distortion.value[1] = distortion.value[2] = 0;
 
+    /* KATCIPIS - Good place to get ME information - Still missing the mb size and the vectors 
+    PicMotionParams **mv_info  = p_Vid->enc_picture->mv_info;
+    PicMotionParams *mv_info_p = &mv_info[currMB->block_y][currMB->block_x];
+
+    metadata_extractor_add_motion_estimation_info(currMB->p_Vid->frame_num,
+                                                  currMB->pix_x,
+                                                  currMB->pix_y,
+                                                  mv_info_p[LIST_0].mv->mv_x,
+                                                  mv_info_p[LIST_0].mv->mv_y);
+    printf("block_x[%d] block_y[%d] mb_type[%d]\n", currMB->block_x, currMB->block_y, currMB->mb_type);
+    KATCIPIS - Done */
+
     DeblockFrame (p_Vid, p_Vid->enc_picture->imgY, p_Vid->enc_picture->imgUV); //comment out to disable deblocking filter
 
     if(p_Inp->RDPictureDeblocking && !p_Vid->TurnDBOff)

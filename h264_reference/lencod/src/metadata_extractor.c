@@ -167,9 +167,9 @@ void metadata_extractor_add_motion_estimation_info(unsigned int frame_number,
                                                    short x_motion_estimation,
                                                    short y_motion_estimation)
 {
-  /*
+  
   printf("metadata_extractor_add_motion_estimation_info:");
   printf("frame_number[%d] mb_x[%d] mb_y[%d] x_motion_estimation[%d] y_motion_estimation[%d]\n", 
           frame_number, mb_x, mb_y, x_motion_estimation, y_motion_estimation);
-  */
+  
 }
