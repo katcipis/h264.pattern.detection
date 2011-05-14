@@ -172,7 +172,6 @@ void MbAffPostProc(VideoParameters *p_Vid)
 static void get_motion_estimation_information(VideoParameters * p_Vid)
 {
   int blk_y, blk_x;
-  unsigned int pic_size_in_blks = p_Vid->PicSizeInMbs * 16;
 
   /* Macroblocks have a 16X16 size. Blocks have 4X4, each Macroblock have 16 blocks. 
      Here we are going to iterate trough the 4x4 blocks ME info */

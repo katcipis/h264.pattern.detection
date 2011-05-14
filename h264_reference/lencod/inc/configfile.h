@@ -17,8 +17,11 @@
 
 #define DEFAULTCONFIGFILENAME "encoder.cfg"
 
-#define PROFILE_IDC     88
-#define LEVEL_IDC       21
+#define PROFILE_IDC                 88
+#define LEVEL_IDC                   21
+#define OBJECT_DETECTION_ACTIVATE   1
+#define OBJECT_DETECTION_MIN_WIDTH  30
+#define OBJECT_DETECTION_MIN_HEIGHT 30
 
 InputParameters cfgparams;
 
@@ -503,7 +506,14 @@ Mapping Map[] = {
     {"VUI_log2_max_mv_length_horizontal",      &cfgparams.VUI.log2_max_mv_length_horizontal,      0,  16.0,                       1,  0.0,             16.0,     },
     {"VUI_num_reorder_frames",                 &cfgparams.VUI.num_reorder_frames,                 0,  16.0,                       1,  0.0,             16.0,     },
     {"VUI_max_dec_frame_buffering",            &cfgparams.VUI.max_dec_frame_buffering,            0,  16.0,                       1,  0.0,             16.0,     },
-    {"SEIMessageText",           &cfgparams.SEIMessageText,               1,   0.0,                       0,  0.0,              0.0,             INPUT_TEXT_SIZE,},
+    {"SEIMessageText",                         &cfgparams.SEIMessageText,                         1,   0.0,                       0,  0.0,              0.0,  INPUT_TEXT_SIZE,},
+
+    /* KATCIPIS adding configuration for Object detection/ tracking */
+    {"object_detection_enable",                &cfgparams.object_detection_enable,                0,  OBJECT_DETECTION_ACTIVATE,  1,  0.0,              1.0,     },
+    {"object_detection_min_width",             &cfgparams.object_detection_min_width,             0,  OBJECT_DETECTION_MIN_WIDTH, 0,  0.0,              0.0,     },
+    {"object_detection_min_height",            &cfgparams.object_detection_min_height,            0,  OBJECT_DETECTION_MIN_HEIGHT,0,  0.0,              0.0,     },
+    {"object_detection_training_file",         &cfgparams.object_detection_training_file,         1,   0.0,                       0,  0.0,              0.0,  FILE_NAME_SIZE,},
+
     {NULL,                       NULL,                                   -1,   0.0,                       0,  0.0,              0.0,                             },
 };
 

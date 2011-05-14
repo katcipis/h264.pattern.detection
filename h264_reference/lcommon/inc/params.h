@@ -383,6 +383,12 @@ struct inp_par_enc
   int  MinIDRDistance;
   int stdRange;                         //!< 1 - standard range, 0 - full range
   int videoCode;                        //!< 1 - 709, 3 - 601:  See VideoCode in io_tiff.
+
+  /* KATCIPIS adding configuration for Object detection/ tracking */
+  int object_detection_enable;
+  int object_detection_min_width;
+  int object_detection_min_height;
+  char object_detection_training_file[FILE_NAME_SIZE];
 };
 
 #endif
