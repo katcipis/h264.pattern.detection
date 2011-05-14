@@ -159,6 +159,9 @@ typedef struct _TrackedObj {
 } TrackedObj;
 
 
+/* Private const data */
+static const int BLOCK_SIZE = 4;
+
 /* Private data */
 static TrackedObj* tracked_obj = NULL;
 
@@ -202,8 +205,11 @@ static void metadata_extractor_tracked_obj_estimate_motion(TrackedObj * obj)
   printf("metadata_extractor_tracked_obj_estimate_motion: motion_x[%d] motion_y[%d] motion_samples[%d]\n",
          obj->motion_x, obj->motion_y, obj->motion_samples);
   /* A simple arithmetic mean of all the vectors */
-  obj->x += obj->motion_x / obj->motion_samples;
-  obj->y += obj->motion_y / obj->motion_samples;
+  printf("metadata_extractor_tracked_obj_estimate_motion: x_mov[%d] y_mov[%d]\n", 
+         obj->motion_x / obj->motion_samples, obj->motion_y / obj->motion_samples);
+
+  obj->x -= obj->motion_x / obj->motion_samples;
+  obj->y -= obj->motion_y / obj->motion_samples;
 
   obj->motion_x       = 0;
   obj->motion_y       = 0;
@@ -214,16 +220,16 @@ static int metadata_extractor_tracked_obj_block_is_inside(short x, short y, Trac
 {
   /* Not going to intersect the block area with the object area, for simplicity */
 
-  if ( (x < obj->x) || (x > obj->x * obj->width)) {
+  if ( (x < obj->x) || (x > obj->x + obj->width)) {
     /* x is out */
     return 0;
   }
 
-  if ( (y < obj->y) || (y > obj->y * obj->height)) {
+  if ( (y < obj->y) || (y > obj->y + obj->height)) {
     /* y is out */
     return 0;
-  }  
-
+  }
+  
   return 1;
 }
 
@@ -271,10 +277,10 @@ void metadata_extractor_add_motion_estimation_info(short blk_x,
                                                    short x_motion_estimation,
                                                    short y_motion_estimation)
 {
-  /* Macroblock size 16X16, Block size is 4X4. (see lencod/inc/defines.h)
-     Each macroblock has 16 blocks. block_pos * 4 = real_pos */
-  short x = blk_x * 4;
-  short y = blk_y * 4;
+  /* Macroblock size 16X16, Block size is 4. (see lencod/inc/defines.h)
+     Block_pos * 4 = real_pos */
+  short x = blk_x * BLOCK_SIZE;
+  short y = blk_y * BLOCK_SIZE;
 
   /* first see if we are tracking an object */
   if (!tracked_obj) {

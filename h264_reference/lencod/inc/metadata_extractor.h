@@ -59,18 +59,18 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned int 
 
 /*!
  *********************************************************************************
- * Add usefull info about macroblock motion estimation, 
+ * Add usefull info about block motion estimation, 
  * allowing the extractor to do object tracking.
  *
- * @param mb_x The macroblock x position.
- * @param mb_y The macroblock y position.
+ * @param block_x The block x position.
+ * @param block_y The block y position.
  * @param x_motion_estimation The motion estimation for x. 
  * @param y_motion_estimation The motion estimation for y.
  *
  *********************************************************************************
  */
-void metadata_extractor_add_motion_estimation_info(short mb_x, 
-                                                   short mb_y,
+void metadata_extractor_add_motion_estimation_info(short block_x, 
+                                                   short block_y,
                                                    short x_motion_estimation,
                                                    short y_motion_estimation);
 
