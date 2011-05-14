@@ -204,6 +204,7 @@ static void metadata_extractor_tracked_obj_estimate_motion(TrackedObj * obj)
 
   printf("metadata_extractor_tracked_obj_estimate_motion: motion_x[%d] motion_y[%d] motion_samples[%d]\n",
          obj->motion_x, obj->motion_y, obj->motion_samples);
+
   /* A simple arithmetic mean of all the vectors */
   printf("metadata_extractor_tracked_obj_estimate_motion: x_mov[%d] y_mov[%d]\n", 
          obj->motion_x / obj->motion_samples, obj->motion_y / obj->motion_samples);
