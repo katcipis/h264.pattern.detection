@@ -20,36 +20,59 @@
 
 #include "extracted_metadata.h"
 
+typedef struct _MetadataExtractor MetadataExtractor;
+
+
 /*!
  *********************************************************************************
- * Initializes metadata extractor. Must be called once, and before any 
- * other function is called.
+ * Creates a new metadata extractor.  
  *
- * @param object_detection_min_width      Min width of the object that will be detected.
- * @param object_detection_min_height     Min height of the object that will be detected.
- * @param object_detection_training_file  File containing the training info used on the object detection.
+ * @param object_detection_min_width           Min width of the object that will be detected.
+ * @param object_detection_min_height          Min height of the object that will be detected.
+ * @param object_detection_search_hysteresis   Search for new object hysteresys (in frames).
+ * @param object_detection_tracking_hysteresis Confirm tracked object existence hysteresis (in frames).
+ * @param object_detection_training_file       File containing the training info used on the object detection.
+ *
+ * @return A MetadataExtractor object.
  *
  *
  *********************************************************************************
  */
-void metadata_extractor_init(int object_detection_min_width,
-                             int object_detection_min_height,
-                             const char * object_detection_training_file);
+MetadataExtractor * metadata_extractor_new(int object_detection_min_width,
+                                           int object_detection_min_height,
+                                           int object_detection_search_hysteresis,
+                                           int object_detection_tracking_hysteresis,
+                                           const char * object_detection_training_file);
+
+
+/*!
+ *********************************************************************************
+ * Free a metadata extractor.  
+ *
+ * @param extractor The metadata extractor object to be destroyed.
+ *
+ *
+ *********************************************************************************
+ */
+void metadata_extractor_free(MetadataExtractor * extractor);
+
 
 /*!
  *********************************************************************************
  * Extracts the entire raw interest object as a metadata from the Y plane.
  *
+ * @param extractor    The MetadataExtractor object.
  * @param frame_number The frame number.
- * @param y The luma plane, y[i][j] where i is the row and j the column.
- * @param width The luma plane width.
- * @param height The luma plane height.
+ * @param y            The luma plane, y[i][j] where i is the row and j the column.
+ * @param width        The luma plane width.
+ * @param height       The luma plane height.
  *
  * @return The metadata or NULL if the interest object is not foundd on the frame.
  *
  *********************************************************************************
  */
-ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned int frame_number,
+ExtractedMetadata * metadata_extractor_extract_raw_object(MetadataExtractor * extractor,
+                                                          unsigned int frame_number,
                                                           unsigned char ** y, 
                                                           int width, 
                                                           int height);
@@ -58,16 +81,18 @@ ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned int frame_num
  *********************************************************************************
  * Extracts the interest object bounding box as a metadata from the Y plane.
  *
+ * @param extractor    The MetadataExtractor object.
  * @param frame_number The frame number.
- * @param y The luma plane, y[i][j] where i is the row and j the column.
- * @param width The luma plane width.
- * @param height The luma plane height.
+ * @param y            The luma plane, y[i][j] where i is the row and j the column.
+ * @param width        The luma plane width.
+ * @param height       The luma plane height.
  *
  * @return The metadata or NULL if the interest object is not foundd on the frame.
  *
  *********************************************************************************
  */
-ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned int frame_number,
+ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtractor * extractor,
+                                                                   unsigned int frame_number,
                                                                    unsigned char ** y,
                                                                    int width,
                                                                    int height);
@@ -78,14 +103,16 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned int 
  * to do object tracking.Eliminating the need to process every frame 
  * to know the new position of a previously detected object.
  *
- * @param block_x The block x position.
- * @param block_y The block y position.
+ * @param extractor           The MetadataExtractor object.
+ * @param block_x             The block x position.
+ * @param block_y             The block y position.
  * @param x_motion_estimation The motion estimation for x. 
  * @param y_motion_estimation The motion estimation for y.
  *
  *********************************************************************************
  */
-void metadata_extractor_add_motion_estimation_info(short block_x, 
+void metadata_extractor_add_motion_estimation_info(MetadataExtractor * extractor,
+                                                   short block_x, 
                                                    short block_y,
                                                    short x_motion_estimation,
                                                    short y_motion_estimation);

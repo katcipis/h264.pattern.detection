@@ -388,6 +388,8 @@ struct inp_par_enc
   int object_detection_enable;
   int object_detection_min_width;
   int object_detection_min_height;
+  int object_detection_search_hysteresis;
+  int object_detection_tracking_hysteresis;
   char object_detection_training_file[FILE_NAME_SIZE];
 };
 

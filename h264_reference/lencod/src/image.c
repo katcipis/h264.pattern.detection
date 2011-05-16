@@ -182,7 +182,8 @@ static void get_motion_estimation_information(VideoParameters * p_Vid)
 
       PicMotionParams *mv_info_p = &p_Vid->enc_picture->mv_info[blk_y][blk_x];
 
-      metadata_extractor_add_motion_estimation_info(blk_x,
+      metadata_extractor_add_motion_estimation_info(p_Vid->metadata_extractor,
+                                                    blk_x,
                                                     blk_y,
                                                     mv_info_p->mv[LIST_0].mv_x,
                                                     mv_info_p->mv[LIST_0].mv_y);
@@ -265,9 +266,7 @@ static void code_a_plane(VideoParameters *p_Vid, InputParameters *p_Inp)
       distortion.value[0] = distortion.value[1] = distortion.value[2] = 0;
 
     /* KATCIPIS - Good place to get ME information - Still missing the mb size and the vectors */
-
     get_motion_estimation_information(p_Vid);
-    
     /* KATCIPIS - Done */
 
     DeblockFrame (p_Vid, p_Vid->enc_picture->imgY, p_Vid->enc_picture->imgUV); //comment out to disable deblocking filter
@@ -1208,31 +1207,32 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
 
   process_image(p_Vid, p_Inp);
 
+  if (p_Inp->object_detection_enable) {
+    /*  KATCIPIS - This sounds like a good place to process the raw Y imgData. */
+    ExtractedMetadata * metadata = metadata_extractor_extract_object_bounding_box(p_Vid->metadata_extractor,
+                                                                                  p_Vid->frame_no,
+                                                                                  (unsigned char **) p_Vid->imgData.frm_data[0],
+                                                                                  p_Vid->imgData.format.width[0],
+                                                                                  p_Vid->imgData.format.height[0]);
 
-  /*  KATCIPIS - This sounds like a good place to process the raw Y imgData. */
-  ExtractedMetadata * metadata = metadata_extractor_extract_object_bounding_box(p_Vid->frame_no,
-                                                                                (unsigned char **) p_Vid->imgData.frm_data[0],
-                                                                                 p_Vid->imgData.format.width[0],
-                                                                                 p_Vid->imgData.format.height[0]);
-
-  if (metadata) {
-    int size                = extracted_metadata_get_serialized_size(metadata);
-    char * data             = malloc(size);
-    NALU_t * nalu           = NULL;
+    if (metadata) {
+      int size                = extracted_metadata_get_serialized_size(metadata);
+      char * data             = malloc(size);
+      NALU_t * nalu           = NULL;
      
-    /* Serialize the metadata */
-    extracted_metadata_serialize(metadata, data);
+      /* Serialize the metadata */
+      extracted_metadata_serialize(metadata, data);
       
-    /* Insert the serialized metadata on the bitstream as SEI NALU. */
-    nalu = user_data_generate_unregistered_sei_nalu(data, size);
-    p_Vid->WriteNALU (p_Vid, nalu);
+      /* Insert the serialized metadata on the bitstream as SEI NALU. */
+      nalu = user_data_generate_unregistered_sei_nalu(data, size);
+      p_Vid->WriteNALU (p_Vid, nalu);
 
-    FreeNALU (nalu);
-    free(data);
-    extracted_metadata_free(metadata);
+      FreeNALU (nalu);
+      free(data);
+      extracted_metadata_free(metadata);
+    }
+    /* KATCIPIS end of metadata extracting */
   }
-  /* KATCIPIS end of metadata extracting */
-
 
   pad_borders (p_Inp->output, p_Vid->width, p_Vid->height, p_Vid->width_cr, p_Vid->height_cr, p_Vid->imgData.frm_data);
 

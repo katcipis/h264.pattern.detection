@@ -29,6 +29,7 @@
 #include "quant_params.h"
 #include "rc_types.h"
 #include "pred_struct_types.h"
+#include "metadata_extractor.h"
 
 typedef struct bit_stream Bitstream;
 
@@ -1328,6 +1329,8 @@ typedef struct video_par
   int gaaiMBAFF_NZCoeff[4][12];
 #endif
 
+  /* KATCIPIS - metadata extractor */
+  MetadataExtractor * metadata_extractor;
 
   int offset_y, offset_cr;
   int wka0, wka1, wka2, wka3, wka4;

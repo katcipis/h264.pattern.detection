@@ -83,7 +83,6 @@
 #include "q_offsets.h"
 #include "pred_struct.h"
 
-#include "metadata_extractor.h"
 
 static const int mb_width_cr[4] = {0, 8, 8,16};
 static const int mb_height_cr[4]= {0, 8,16,16};
@@ -225,9 +224,16 @@ int main(int argc, char **argv)
 
   /* KATCIPIS - init metadata extractor */
   if (p_Enc->p_Inp->object_detection_enable) {
-    metadata_extractor_init(p_Enc->p_Inp->object_detection_min_width,
-                            p_Enc->p_Inp->object_detection_min_height,
-                            p_Enc->p_Inp->object_detection_training_file);
+    p_Enc->p_Vid->metadata_extractor = metadata_extractor_new(p_Enc->p_Inp->object_detection_min_width,
+                                                              p_Enc->p_Inp->object_detection_min_height,
+                                                              p_Enc->p_Inp->object_detection_search_hysteresis,
+                                                              p_Enc->p_Inp->object_detection_tracking_hysteresis,
+                                                              p_Enc->p_Inp->object_detection_training_file);
+
+    if (!p_Enc->p_Vid->metadata_extractor) {
+      printf("ERROR CREATING METADATA EXTRACTOR !!!!\n");
+      return -1;
+    }
   }
 
   // init encoder
@@ -239,6 +245,7 @@ int main(int argc, char **argv)
   // terminate sequence
   free_encoder_memory(p_Enc->p_Vid, p_Enc->p_Inp);
 
+  metadata_extractor_free(p_Enc->p_Vid->metadata_extractor);
   free_params (p_Enc->p_Inp);  
   free_encoder(p_Enc);
 
