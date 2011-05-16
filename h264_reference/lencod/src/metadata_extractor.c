@@ -42,10 +42,10 @@ void metadata_extractor_init(int object_detection_min_width,
   haar_classifier_min_size.width  = object_detection_min_width; 
   haar_classifier_min_size.height = object_detection_min_height;
 
-  printf("metadata_extractor_init: object detection configured to search for objects with a min size of [%d] x [%d]\n", 
+  printf("\nmetadata_extractor_init: object detection configured to search for objects with a min size of [%d] x [%d]\n", 
          object_detection_min_width, object_detection_min_height);
 
-  printf("metadata_extractor_init: object detection training file is [%s]\n", object_detection_training_file);
+  printf("metadata_extractor_init: object detection training file is [%s]\n\n", object_detection_training_file);
 }
 
 

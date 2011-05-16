@@ -515,6 +515,8 @@ void extracted_metadata_buffer_add(ExtractedMetadataBuffer * buffer, ExtractedMe
     return;
   }
 
+  printf("extracted_metadata_buffer_add: add new metadata, frame_number[%d]\n", obj->frame_number);
+
   buffer->ringbuffer[buffer->write_index] = obj;
   buffer->write_index                     = new_write_index;
 }
@@ -524,17 +526,25 @@ ExtractedMetadata * extracted_metadata_buffer_get(ExtractedMetadataBuffer * buff
   ExtractedMetadata * obj = NULL;
 
   while (buffer->write_index != buffer->read_index) {
-    obj                = buffer->ringbuffer[buffer->read_index];
+
+    obj = buffer->ringbuffer[buffer->read_index];
+
+    if (frame_number < obj->frame_number) {
+      /* We have some metadata for the next frames, but no for this one */
+      return NULL;
+    }
+ 
+    /* We are going to get or discard this metadata */
     buffer->read_index = extracted_metadata_buffer_get_next_index(buffer->read_index);
 
     if (frame_number == obj->frame_number) {
       return obj;
     }
-    
+
+    printf("extracted_metadata_buffer_get: discarding late metadata frame_number[%d]\n", obj->frame_number);    
     extracted_metadata_free(obj);
   }
 
-  printf("extracted_metadata_buffer_get: cant find frame_number [%u]\n", frame_number);
   return NULL;
 }
 
