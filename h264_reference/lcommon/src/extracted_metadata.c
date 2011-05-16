@@ -88,7 +88,6 @@ void extracted_metadata_serialize(ExtractedMetadata * metadata, char * serialize
   *((uint32_t *) serialized_data) = htonl(metadata->frame_number);
   serialized_data                += sizeof(uint32_t);
 
-  printf("extracted_metadata_serialize: serialized frame_number[%u]\n", metadata->frame_number);
   metadata->serialize(metadata, serialized_data);
 }
 

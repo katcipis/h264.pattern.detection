@@ -168,7 +168,6 @@ static CvRect* metadata_extractor_search_for_object_of_interest(MetadataExtracto
       return NULL;
   }
 
-  printf("\n<<<<<<<<<<<<<<<<<<<<<<<< REALIZADO DETECCAO HAAR >>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n");
   return (CvRect*)cvGetSeqElem( results, 0);
 }
 
@@ -217,16 +216,11 @@ static void metadata_extractor_tracked_bounding_box_free(TrackedBoundigBox * obj
 
 static void metadata_extractor_tracked_bounding_box_estimate_motion(TrackedBoundigBox * obj) 
 {
-  if (obj->motion_samples == 0) {
-    printf("metadata_extractor_tracked_bounding_box_estimate_motion: we have no motion estimation info !!\n");
-    return;
-  }
-
-  printf("metadata_extractor_tracked_bounding_box_estimate_motion: motion_x[%d] motion_y[%d] motion_samples[%d]\n",
+  printf("\nmetadata_extractor_tracked_bounding_box_estimate_motion: motion_x[%d] motion_y[%d] motion_samples[%d]\n",
          obj->motion_x, obj->motion_y, obj->motion_samples);
 
   /* A simple arithmetic mean of all the vectors */
-  printf("metadata_extractor_tracked_bounding_box_estimate_motion: x_mov[%d] y_mov[%d]\n", 
+  printf("metadata_extractor_tracked_bounding_box_estimate_motion: x_mov[%d] y_mov[%d]\n\n", 
          obj->motion_x / obj->motion_samples, obj->motion_y / obj->motion_samples);
 
   obj->x -= obj->motion_x / obj->motion_samples;
@@ -315,9 +309,11 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
   CvRect * rect = NULL;
 
   if (extractor->tracked_bounding_box) {
-    /* We are tracking - lets check our tracking hysteresis first */
 
-    if ( (frame_num - extractor->last_searched_frame) >= extractor->tracking_hysteresis) {
+    /* We are tracking - lets check our tracking hysteresis and if we have 
+       some motion samples to work with. (means the object left the video area) */
+    if ( ((frame_num - extractor->last_searched_frame) >= extractor->tracking_hysteresis) ||
+         (extractor->tracked_bounding_box->motion_samples == 0) ) {
 
       /* Time to confirm if the object is still present */
       rect = metadata_extractor_search_for_object_of_interest(extractor, y, width, height);
