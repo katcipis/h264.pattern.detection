@@ -20,6 +20,21 @@
 
 #include "extracted_metadata.h"
 
+/*!
+ *********************************************************************************
+ * Initializes metadata extractor. Must be called once, and before any 
+ * other function is called.
+ *
+ * @param object_detection_min_width      Min width of the object that will be detected.
+ * @param object_detection_min_height     Min height of the object that will be detected.
+ * @param object_detection_training_file  File containing the training info used on the object detection.
+ *
+ *
+ *********************************************************************************
+ */
+void metadata_extractor_init(int object_detection_min_width,
+                             int object_detection_min_height,
+                             const char * object_detection_training_file);
 
 /*!
  *********************************************************************************
@@ -59,8 +74,9 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned int 
 
 /*!
  *********************************************************************************
- * Add usefull info about block motion estimation, 
- * allowing the extractor to do object tracking.
+ * Add usefull info about block motion estimation, allowing the extractor 
+ * to do object tracking.Eliminating the need to process every frame 
+ * to know the new position of a previously detected object.
  *
  * @param block_x The block x position.
  * @param block_y The block y position.

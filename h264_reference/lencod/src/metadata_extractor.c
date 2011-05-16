@@ -5,37 +5,47 @@
 #include <stdio.h>
 
 
-/* Filename of the xml defining the trained Haar cascade */
-static const char * cascade_filename = "haarcascade_frontalface_alt.xml";
+/*********************** 
+ * Module private data * 
+ ***********************/
 
 /* Haar feature cascade */
-static CvHaarClassifierCascade * classifier = NULL;
+static CvHaarClassifierCascade * haar_classifier  = NULL;
 
 /* OpenCV “work buffer" */
-static CvMemStorage * storage    = NULL;
+static CvMemStorage * haar_detect_objects_storage = NULL;
 
 /* How big of a jump there is between each scale */
 static const double SCALE_FACTOR = 1.1f;
 
 /* only decide a face is present in a location if there are at least three overlapping detections. */
-static const int MIN_NEIGHBORS = 3;
+static const int MIN_NEIGHBORS   = 3;
 
 /* Minimum object size */  
-static CvSize MIN_SIZE = {30, 30};
+static CvSize haar_classifier_min_size = {0, 0};
 
 
-static void init_haar_facilities()
+/*!
+ *************************************************************************************
+ * \brief
+ *    Function body for the metadata extractor init.
+ *
+ *
+ *************************************************************************************
+ */
+void metadata_extractor_init(int object_detection_min_width,
+                             int object_detection_min_height,
+                             const char * object_detection_training_file)
 {
-  if (!classifier) {
-    classifier = (CvHaarClassifierCascade*) cvLoad( cascade_filename, 0, 0, 0 );
-  }
+  haar_classifier                 = (CvHaarClassifierCascade*) cvLoad( object_detection_training_file, 0, 0, 0 );
+  haar_detect_objects_storage     = cvCreateMemStorage(0);
+  haar_classifier_min_size.width  = object_detection_min_width; 
+  haar_classifier_min_size.height = object_detection_min_height;
 
-  if (!storage) {
-    storage = cvCreateMemStorage(0);
-  }
+  printf("metadata_extractor_init: object detection configured to search for objects with a min size of [%d] x [%d]\n", 
+         object_detection_min_width, object_detection_min_height);
 
-  /* prepares memory for the classifier (if it was used before already) */
-  cvClearMemStorage(storage);
+  printf("metadata_extractor_init: object detection training file is [%s]\n", object_detection_training_file);
 }
 
 
@@ -68,20 +78,19 @@ static CvRect* metadata_extractor_search_for_object_of_interest(unsigned char **
      these differences might be skewed by overall lighting or exposure of the test images. */
   cvEqualizeHist(gray, gray);
 
-
-  /* Lets start detection */
-  init_haar_facilities();
+  /* prepares memory for the haar_classifier (if it was used before already) */
+  cvClearMemStorage(haar_detect_objects_storage);
 
   /* The search is optimized to find only one object */
   results =  cvHaarDetectObjects (gray,
-                                  classifier,
-                                  storage,
+                                  haar_classifier,
+                                  haar_detect_objects_storage,
                                   SCALE_FACTOR,
                                   MIN_NEIGHBORS,
                                   CV_HAAR_FIND_BIGGEST_OBJECT | 
                                   CV_HAAR_DO_ROUGH_SEARCH | 
                                   CV_HAAR_DO_CANNY_PRUNING, 
-                                  MIN_SIZE);
+                                  haar_classifier_min_size);
 
   /* Freeing images */
   cvReleaseImage(&frame);
@@ -95,56 +104,9 @@ static CvRect* metadata_extractor_search_for_object_of_interest(unsigned char **
 }
 
 
-/*!
- *************************************************************************************
- * \brief
- *    Function body for extract metadata from the y image plane.
- *
- * \return
- *    A ExtractedMetadata object or NULL in case no metadata is extracted.
- *
- *************************************************************************************
- */
-ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned int frame_num, 
-                                                          unsigned char ** y, 
-                                                          int width, 
-                                                          int height)
-{
-  /* First we must convert the Y luma plane to BGR and them to grayscale. 
-     On grayscale Y = R = G = B. Pretty simple to convert. */
-
-  ExtractedYImage * metadata = NULL;
-  CvRect* res                = metadata_extractor_search_for_object_of_interest(y, width, height);
-
-  if (!res) {
-      return NULL;
-  }
-
-  metadata = extracted_y_image_new(frame_num, res->width, res->height);
-
-  unsigned char ** y_plane  = extracted_y_image_get_y(metadata);
-  int metadata_row          = 0;
-  int row                   = 0;
-  int col                   = 0;
-
-  /* Copy the object from the original frame */
-  for (row = res->y; row < (res->height + res->y); row++) {
-
-    int metadata_col = 0;
-
-    for (col = res->x; col < (res->width + res->x); col ++) {
-        y_plane[metadata_row][metadata_col] = y[row][col];
-        metadata_col++;
-    }
-    metadata_row++;
-  }
-
-  return (ExtractedMetadata *) metadata;
-}
-
-/******************************** 
- * ObjectBoundingBox facilities * 
- ********************************/
+/************************* 
+ * TrackedObj facilities * 
+ *************************/
 
 /* Private structs */
 typedef struct _TrackedObj {
@@ -235,6 +197,56 @@ static int metadata_extractor_tracked_obj_block_is_inside(short x, short y, Trac
 }
 
 /* Public API */
+/*!
+ *************************************************************************************
+ * \brief
+ *    Function body for extract metadata from the y image plane.
+ *
+ * \return
+ *    A ExtractedMetadata object or NULL in case no metadata is extracted.
+ *
+ *************************************************************************************
+ */
+ExtractedMetadata * metadata_extractor_extract_raw_object(unsigned int frame_num, 
+                                                          unsigned char ** y, 
+                                                          int width, 
+                                                          int height)
+{
+  /* First we must convert the Y luma plane to BGR and them to grayscale. 
+     On grayscale Y = R = G = B. Pretty simple to convert. */
+
+  ExtractedYImage * metadata = NULL;
+  CvRect* res                = NULL;
+
+  res = metadata_extractor_search_for_object_of_interest(y, width, height);
+
+  if (!res) {
+      return NULL;
+  }
+
+  metadata = extracted_y_image_new(frame_num, res->width, res->height);
+
+  unsigned char ** y_plane  = extracted_y_image_get_y(metadata);
+  int metadata_row          = 0;
+  int row                   = 0;
+  int col                   = 0;
+
+  /* Copy the object from the original frame */
+  for (row = res->y; row < (res->height + res->y); row++) {
+
+    int metadata_col = 0;
+
+    for (col = res->x; col < (res->width + res->x); col ++) {
+        y_plane[metadata_row][metadata_col] = y[row][col];
+        metadata_col++;
+    }
+    metadata_row++;
+  }
+
+  return (ExtractedMetadata *) metadata;
+}
+
+
 ExtractedMetadata * metadata_extractor_extract_object_bounding_box(unsigned int frame_num, 
                                                                    unsigned char ** y,
                                                                    int width,
