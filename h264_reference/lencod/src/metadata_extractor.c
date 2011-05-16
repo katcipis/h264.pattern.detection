@@ -42,8 +42,11 @@ struct _MetadataExtractor {
   int haar_flags;
 
   /* Search/Tracking hysteresis */
-  int search_hysteresis;
-  int tracking_hysteresis;
+  unsigned int search_hysteresis;
+  unsigned int tracking_hysteresis;
+
+  /* Last frame that we did a full search */
+  unsigned int last_searched_frame;
 
   TrackedBoundigBox * tracked_bounding_box;
 };
@@ -56,6 +59,7 @@ static const int DEFAULT_MIN_NEIGHBORS   = 3;
 
 /* Private TrackedBoundigBox functions */
 static TrackedBoundigBox * metadata_extractor_tracked_bounding_box_new(CvRect* area);
+static void metadata_extractor_tracked_bounding_box_update(TrackedBoundigBox * obj, CvRect* area);
 static void metadata_extractor_tracked_bounding_box_free(TrackedBoundigBox * obj);
 static void metadata_extractor_tracked_bounding_box_estimate_motion(TrackedBoundigBox * obj);
 static int metadata_extractor_tracked_bounding_box_block_is_inside(short x, short y, TrackedBoundigBox * obj);
@@ -82,21 +86,25 @@ MetadataExtractor * metadata_extractor_new(int min_width,
     return NULL;
   }
 
-  extractor->classifier      = (CvHaarClassifierCascade*) cvLoad( training_file, 0, 0, 0 );
-  extractor->storage         = cvCreateMemStorage(0);
-  extractor->min_size.width  = min_width; 
-  extractor->min_size.height = min_height;
+  extractor->classifier          = (CvHaarClassifierCascade*) cvLoad( training_file, 0, 0, 0 );
+  extractor->storage             = cvCreateMemStorage(0);
+  extractor->min_size.width      = min_width; 
+  extractor->min_size.height     = min_height;
+  extractor->search_hysteresis   = search_hysteresis;
+  extractor->tracking_hysteresis = tracking_hysteresis;
 
   /* default hardcoded stuff */
   extractor->haar_flags           = CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_DO_ROUGH_SEARCH | CV_HAAR_DO_CANNY_PRUNING;
   extractor->min_neighbors        = DEFAULT_MIN_NEIGHBORS;
   extractor->scale_factor         = DEFAULT_SCALE_FACTOR;
   extractor->tracked_bounding_box = NULL;
+  extractor->last_searched_frame  = 0;
 
   printf("\nmetadata_extractor_new: configured to search for objects with a min size of [%d] x [%d]\n", 
          min_width, min_height);
 
-  printf("metadata_extractor_new: training file is [%s]\n\n", training_file);
+  printf("metadata_extractor_new: search_hysteresis[%d] tracking_hysteresis[%d] training file is [%s]\n\n", 
+         search_hysteresis, tracking_hysteresis, training_file);
 
   return extractor;
 }
@@ -104,7 +112,6 @@ MetadataExtractor * metadata_extractor_new(int min_width,
 void metadata_extractor_free(MetadataExtractor * extractor)
 {
   /* TODO free opencv stuff */
-  printf("metadata_extractor_free\n");
   metadata_extractor_tracked_bounding_box_free(extractor->tracked_bounding_box);
   free(extractor);
 }
@@ -161,6 +168,7 @@ static CvRect* metadata_extractor_search_for_object_of_interest(MetadataExtracto
       return NULL;
   }
 
+  printf("\n<<<<<<<<<<<<<<<<<<<<<<<< REALIZADO DETECCAO HAAR >>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n");
   return (CvRect*)cvGetSeqElem( results, 0);
 }
 
@@ -184,17 +192,22 @@ static TrackedBoundigBox * metadata_extractor_tracked_bounding_box_new(CvRect* a
     return NULL;
   }
 
-  obj->x              = area->x;
-  obj->y              = area->y;
-  obj->width          = area->width;
-  obj->height         = area->height;
-  obj->motion_x       = 0;
-  obj->motion_y       = 0;
-  obj->motion_samples = 0;
-  obj->id             = tracked_bounding_box_id;
+  obj->id = tracked_bounding_box_id;
+  metadata_extractor_tracked_bounding_box_update(obj, area);
 
   tracked_bounding_box_id++;
   return obj;
+}
+
+static void metadata_extractor_tracked_bounding_box_update(TrackedBoundigBox * box, CvRect* area)
+{
+  box->x              = area->x;
+  box->y              = area->y;
+  box->width          = area->width;
+  box->height         = area->height;
+  box->motion_x       = 0;
+  box->motion_y       = 0;
+  box->motion_samples = 0;
 }
 
 static void metadata_extractor_tracked_bounding_box_free(TrackedBoundigBox * obj)
@@ -301,12 +314,32 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
 {
   CvRect * rect = NULL;
 
-  printf("KMLO1\n");
-
   if (extractor->tracked_bounding_box) {
-    /* We are tracking - Since the tracking started on the previous frame, 
-       by now we have a full motion estimation for the object */
-    metadata_extractor_tracked_bounding_box_estimate_motion(extractor->tracked_bounding_box);
+    /* We are tracking - lets check our tracking hysteresis first */
+
+    if ( (frame_num - extractor->last_searched_frame) >= extractor->tracking_hysteresis) {
+
+      /* Time to confirm if the object is still present */
+      rect = metadata_extractor_search_for_object_of_interest(extractor, y, width, height);
+      extractor->last_searched_frame = frame_num;
+
+      if (!rect) {
+        /* We are tracking something that no longer exists. */
+        metadata_extractor_tracked_bounding_box_free(extractor->tracked_bounding_box);
+        extractor->tracked_bounding_box = NULL;
+        return NULL;
+      }
+
+      /* We still have the object. It would be good to have some heuristic to verify if it is the same object */
+      metadata_extractor_tracked_bounding_box_update(extractor->tracked_bounding_box, rect);
+
+    } else {
+
+      /* Just use ME information  */
+      metadata_extractor_tracked_bounding_box_estimate_motion(extractor->tracked_bounding_box);
+
+    }
+
     return (ExtractedMetadata *) extracted_object_bounding_box_new(extractor->tracked_bounding_box->id, 
                                                                    frame_num, 
                                                                    extractor->tracked_bounding_box->x, 
@@ -315,15 +348,21 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
                                                                    extractor->tracked_bounding_box->height);
   }
 
-  printf("KMLO2\n");  
+  /* We are not tracking */
+
+  if ( (frame_num - extractor->last_searched_frame) < extractor->search_hysteresis) {
+    /* Lets not search this frame */
+    return NULL;
+  }
+
   rect = metadata_extractor_search_for_object_of_interest(extractor, y, width, height);
+  extractor->last_searched_frame = frame_num;
 
   if (!rect) {
     /* no interest object */
     return NULL;
   }
 
-  printf("KMLO3\n");
   extractor->tracked_bounding_box = metadata_extractor_tracked_bounding_box_new(rect); 
   return (ExtractedMetadata *) extracted_object_bounding_box_new(extractor->tracked_bounding_box->id, 
                                                                  frame_num, 
