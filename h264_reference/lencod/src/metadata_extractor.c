@@ -132,15 +132,34 @@ void metadata_extractor_free(MetadataExtractor * extractor)
 
 static void metadata_extractor_get_bounding_box_roi(MetadataExtractor * extractor, CvRect * roi)
 {
+  int x_center = 0;
+  int y_center = 0;
+  int x_aux    = 0;
+  int y_aux    = 0;
+
   if (!(extractor && extractor->tracked_bounding_box)) {
     printf("metadata_extractor_get_bounding_box_roi: ERROR, NULL extractor/tracked bounding box !!!\n");
     return;
   }
 
-  roi->x      = extractor->tracked_bounding_box->x / extractor->tracking_scale_factor;
-  roi->y      = extractor->tracked_bounding_box->y / extractor->tracking_scale_factor;
   roi->width  = extractor->tracked_bounding_box->width * extractor->tracking_scale_factor;
   roi->height = extractor->tracked_bounding_box->height * extractor->tracking_scale_factor;
+
+  /* get CvRect center */
+  x_center = extractor->tracked_bounding_box->width / 2;
+  y_center = extractor->tracked_bounding_box->height / 2;
+
+  /* translate x,y to the origin */
+  x_aux = extractor->tracked_bounding_box->x - x_center;
+  y_aux = extractor->tracked_bounding_box->y - y_center;
+
+  /* scale x,y */
+  y_aux = y_aux / extractor->tracking_scale_factor;
+  x_aux = x_aux / extractor->tracking_scale_factor;
+
+  /* translate x,y back to original position, we are done */
+  roi->x = x_aux + x_center;
+  roi->y = y_aux + y_center;
 
   printf("metadata_extractor_get_bounding_box_roi: bounding box x[%f] y[%f] width[%d] height[%d]\n",
          extractor->tracked_bounding_box->x, extractor->tracked_bounding_box->y, 
@@ -293,8 +312,9 @@ static int tracked_bounding_box_point_is_inside(short x, short y, TrackedBoundig
   return 1;
 }
 
-/* Public API */
-
+/*************
+* Public API *
+**************/
 ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtractor * extractor, 
                                                                    unsigned int frame_num, 
                                                                    unsigned char ** y,
@@ -367,9 +387,6 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
                                                                  extractor->tracked_bounding_box->height);
 }
 
-/***************************** 
- * ObjectTracking facilities * 
- *****************************/
 void metadata_extractor_add_motion_estimation_info(MetadataExtractor * extractor, 
                                                    short blk_x, 
                                                    short blk_y,
