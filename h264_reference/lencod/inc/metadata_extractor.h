@@ -108,8 +108,8 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
  * @param extractor           The MetadataExtractor object.
  * @param block_x             The block x position.
  * @param block_y             The block y position.
- * @param x_motion_estimation The motion estimation for x. 
- * @param y_motion_estimation The motion estimation for y.
+ * @param x_motion_estimation The motion estimation for x (in QPEL units). 
+ * @param y_motion_estimation The motion estimation for y (in QPEL units).
  *
  *********************************************************************************
  */

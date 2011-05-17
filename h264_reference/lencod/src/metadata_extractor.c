@@ -20,9 +20,8 @@ typedef struct _TrackedBoundigBox {
   short width;
   short height;
 
-  /* double ME is used so we dont lose small movement information */
-  double motion_x;
-  double motion_y;
+  int motion_x;
+  int motion_y;
   int motion_samples;
 } TrackedBoundigBox;
 
@@ -65,12 +64,16 @@ static const double DEFAULT_SCALE_FACTOR = 1.1f;
 static const int DEFAULT_MIN_NEIGHBORS   = 3;
 
 
+/* The motion vectors are on QPEL units (Quarter Pel refinement). To get the block real movement we must divide by 4 */
+static const double QPEL_UNIT = 4.0f;
+
+
 /* Private TrackedBoundigBox functions */
 static TrackedBoundigBox * tracked_bounding_box_new(CvRect* area);
 static void tracked_bounding_box_update(TrackedBoundigBox * obj, CvRect* area);
 static void tracked_bounding_box_free(TrackedBoundigBox * obj);
 static void tracked_bounding_box_estimate_motion(TrackedBoundigBox * obj);
-static int tracked_bounding_box_block_is_inside(short x, short y, TrackedBoundigBox * obj);
+static int tracked_bounding_box_point_is_inside(short x, short y, TrackedBoundigBox * obj);
 
 /*!
  *************************************************************************************
@@ -225,17 +228,19 @@ static void tracked_bounding_box_free(TrackedBoundigBox * obj)
 
 static void tracked_bounding_box_estimate_motion(TrackedBoundigBox * obj) 
 {
-  printf("\ntracked_bounding_box_estimate_motion: total_motion_x[%f] total_motion_y[%f] motion_samples[%d]\n",
+  printf("\ntracked_bounding_box_estimate_motion: total_motion_x[%d] total_motion_y[%d] motion_samples[%d]\n",
          obj->motion_x, obj->motion_y, obj->motion_samples);
 
   /* A simple arithmetic mean of all the vectors */
   printf("tracked_bounding_box_estimate_motion: x_mov[%f] y_mov[%f]\n", 
-         obj->motion_x / obj->motion_samples, obj->motion_y / obj->motion_samples);
+         ((double) obj->motion_x / QPEL_UNIT) / (double) obj->motion_samples, 
+         ((double) obj->motion_y / QPEL_UNIT) / (double) obj->motion_samples);
 
   printf("tracked_bounding_box_estimate_motion: old_x[%f] old_y[%f]\n", obj->x, obj->y);
 
-  obj->x -= obj->motion_x / obj->motion_samples;
-  obj->y -= obj->motion_y / obj->motion_samples;
+  /* Dont want to lose precision (accumulated movement) on the integer division */
+  obj->x -= ((double) obj->motion_x / QPEL_UNIT) / (double) obj->motion_samples;
+  obj->y -= ((double) obj->motion_y / QPEL_UNIT) / (double) obj->motion_samples;
 
   printf("tracked_bounding_box_estimate_motion: new_x[%f] new_y[%f]\n\n", obj->x, obj->y);
 
@@ -244,9 +249,8 @@ static void tracked_bounding_box_estimate_motion(TrackedBoundigBox * obj)
   obj->motion_samples = 0;
 }
 
-static int tracked_bounding_box_block_is_inside(short x, short y, TrackedBoundigBox * obj)
+static int tracked_bounding_box_point_is_inside(short x, short y, TrackedBoundigBox * obj)
 {
-  /* Not going to intersect the block area with the object area, for simplicity */
 
   if ( (x < obj->x) || (x > obj->x + obj->width)) {
     /* x is out */
@@ -401,9 +405,12 @@ void metadata_extractor_add_motion_estimation_info(MetadataExtractor * extractor
   }
 
   
-  /* Lets test if this block is inside our object area.  */
-  if (!tracked_bounding_box_block_is_inside(x, y, extractor->tracked_bounding_box)) {
-    /* Ignore this block info */
+  /* Lets test if any point of this block is inside our object area.  */
+  if (! (tracked_bounding_box_point_is_inside(x, y, extractor->tracked_bounding_box) ||
+         tracked_bounding_box_point_is_inside(x + BLOCK_SIZE, y, extractor->tracked_bounding_box) ||
+         tracked_bounding_box_point_is_inside(x, y + BLOCK_SIZE, extractor->tracked_bounding_box) ||
+         tracked_bounding_box_point_is_inside(x + BLOCK_SIZE, y + BLOCK_SIZE, extractor->tracked_bounding_box))) {
+    /* Ignore this block info */ 
     return;
   }
 

@@ -171,7 +171,6 @@ void MbAffPostProc(VideoParameters *p_Vid)
 */
 static void get_motion_estimation_information(VideoParameters * p_Vid)
 {
-  static const double QPEL_UNIT = 4.0f;
   int blk_y, blk_x;
   
   /* Macroblocks have a 16X16 size. Blocks have 4X4, each Macroblock have 16 blocks. 
@@ -181,15 +180,13 @@ static void get_motion_estimation_information(VideoParameters * p_Vid)
 
     for(blk_x = 0 ; blk_x < ceil(p_Vid->width / BLOCK_SIZE); blk_x++) {
 
-      /* The motion vectors are on QPEL units (Quarter Pel refinement). 
-         To have the pixels real movement we must divide by 4 */
       PicMotionParams *mv_info_p = &p_Vid->enc_picture->mv_info[blk_y][blk_x];
 
       metadata_extractor_add_motion_estimation_info(p_Vid->metadata_extractor,
                                                     blk_x,
                                                     blk_y,
-                                                    mv_info_p->mv[LIST_0].mv_x / QPEL_UNIT,
-                                                    mv_info_p->mv[LIST_0].mv_y / QPEL_UNIT);
+                                                    mv_info_p->mv[LIST_0].mv_x,
+                                                    mv_info_p->mv[LIST_0].mv_y);
     }
 
   }
