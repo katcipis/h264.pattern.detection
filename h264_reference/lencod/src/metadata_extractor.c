@@ -98,12 +98,13 @@ MetadataExtractor * metadata_extractor_new(int min_width,
     return NULL;
   }
 
-  extractor->classifier          = (CvHaarClassifierCascade*) cvLoad( training_file, 0, 0, 0 );
-  extractor->storage             = cvCreateMemStorage(0);
-  extractor->min_size.width      = min_width; 
-  extractor->min_size.height     = min_height;
-  extractor->search_hysteresis   = search_hysteresis;
-  extractor->tracking_hysteresis = tracking_hysteresis;
+  extractor->classifier            = (CvHaarClassifierCascade*) cvLoad( training_file, 0, 0, 0 );
+  extractor->storage               = cvCreateMemStorage(0);
+  extractor->min_size.width        = min_width; 
+  extractor->min_size.height       = min_height;
+  extractor->search_hysteresis     = search_hysteresis;
+  extractor->tracking_hysteresis   = tracking_hysteresis;
+  extractor->tracking_scale_factor = tracking_scale_factor;
 
   /* default hardcoded stuff */
   extractor->haar_flags           = CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_DO_ROUGH_SEARCH | CV_HAAR_DO_CANNY_PRUNING;
@@ -115,23 +116,45 @@ MetadataExtractor * metadata_extractor_new(int min_width,
   printf("\nmetadata_extractor_new: configured to search for objects with a min size of [%d] x [%d]\n", 
          min_width, min_height);
 
-  printf("metadata_extractor_new: search_hysteresis[%d] tracking_hysteresis[%d] training file is [%s]\n\n", 
-         search_hysteresis, tracking_hysteresis, training_file);
+  printf("metadata_extractor_new: search_hysteresis[%d] tracking_hysteresis[%d] tracking_scale_factor[%f] training file is [%s]\n\n", 
+         search_hysteresis, tracking_hysteresis, tracking_scale_factor, training_file);
 
   return extractor;
 }
 
 void metadata_extractor_free(MetadataExtractor * extractor)
 {
-  /* TODO free opencv stuff */
-  tracked_bounding_box_free(extractor->tracked_bounding_box);
+  if (extractor->tracked_bounding_box) {
+    tracked_bounding_box_free(extractor->tracked_bounding_box);
+  }
   free(extractor);
+}
+
+static void metadata_extractor_get_bounding_box_roi(MetadataExtractor * extractor, CvRect * roi)
+{
+  if (!(extractor && extractor->tracked_bounding_box)) {
+    printf("metadata_extractor_get_bounding_box_roi: ERROR, NULL extractor/tracked bounding box !!!\n");
+    return;
+  }
+
+  roi->x      = extractor->tracked_bounding_box->x / extractor->tracking_scale_factor;
+  roi->y      = extractor->tracked_bounding_box->y / extractor->tracking_scale_factor;
+  roi->width  = extractor->tracked_bounding_box->width * extractor->tracking_scale_factor;
+  roi->height = extractor->tracked_bounding_box->height * extractor->tracking_scale_factor;
+
+  printf("metadata_extractor_get_bounding_box_roi: bounding box x[%f] y[%f] width[%d] height[%d]\n",
+         extractor->tracked_bounding_box->x, extractor->tracked_bounding_box->y, 
+         extractor->tracked_bounding_box->width, extractor->tracked_bounding_box->height);
+
+  printf("metadata_extractor_get_bounding_box_roi: roi x[%d] y[%d] width[%d] height[%d]\n\n",
+         roi->x, roi->y, roi->width, roi->height);
 }
 
 static CvRect* metadata_extractor_search_for_object_of_interest(MetadataExtractor * extractor, 
                                                                 unsigned char ** y, 
                                                                 int width, 
-                                                                int height)
+                                                                int height,
+                                                                CvRect * roi)
 {
   IplImage * frame                   = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
   IplImage * gray                    = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
@@ -153,12 +176,17 @@ static CvRect* metadata_extractor_search_for_object_of_interest(MetadataExtracto
     }
   }
 
-  cvCvtColor( frame, gray, CV_BGR2GRAY );
+  cvCvtColor(frame, gray, CV_BGR2GRAY);
 
   /* cvEqualizeHist spreads out the brightness values necessary because the integral image 
      features are based on differences of rectangle regions and, if the histogram is not balanced, 
      these differences might be skewed by overall lighting or exposure of the test images. */
   cvEqualizeHist(gray, gray);
+
+  if (roi) {
+    /* We have a defined region of interest */
+    cvSetImageROI(gray, *roi);
+  }
 
   /* prepares memory for the haar_classifier (if it was used before already) */
   cvClearMemStorage(extractor->storage);
@@ -266,56 +294,6 @@ static int tracked_bounding_box_point_is_inside(short x, short y, TrackedBoundig
 }
 
 /* Public API */
-/*!
- *************************************************************************************
- * \brief
- *    Function body for extract metadata from the y image plane.
- *
- * \return
- *    A ExtractedMetadata object or NULL in case no metadata is extracted.
- *
- *************************************************************************************
- */
-ExtractedMetadata * metadata_extractor_extract_raw_object(MetadataExtractor * extractor,
-                                                          unsigned int frame_num, 
-                                                          unsigned char ** y, 
-                                                          int width, 
-                                                          int height)
-{
-  /* First we must convert the Y luma plane to BGR and them to grayscale. 
-     On grayscale Y = R = G = B. Pretty simple to convert. */
-
-  ExtractedYImage * metadata = NULL;
-  CvRect* res                = NULL;
-
-  res = metadata_extractor_search_for_object_of_interest(extractor, y, width, height);
-
-  if (!res) {
-      return NULL;
-  }
-
-  metadata = extracted_y_image_new(frame_num, res->width, res->height);
-
-  unsigned char ** y_plane  = extracted_y_image_get_y(metadata);
-  int metadata_row          = 0;
-  int row                   = 0;
-  int col                   = 0;
-
-  /* Copy the object from the original frame */
-  for (row = res->y; row < (res->height + res->y); row++) {
-
-    int metadata_col = 0;
-
-    for (col = res->x; col < (res->width + res->x); col ++) {
-        y_plane[metadata_row][metadata_col] = y[row][col];
-        metadata_col++;
-    }
-    metadata_row++;
-  }
-
-  return (ExtractedMetadata *) metadata;
-}
-
 
 ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtractor * extractor, 
                                                                    unsigned int frame_num, 
@@ -332,8 +310,12 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
     if ( ((frame_num - extractor->last_searched_frame) >= extractor->tracking_hysteresis) ||
          (extractor->tracked_bounding_box->motion_samples == 0) ) {
 
+      CvRect tracked_bounding_box_roi;
+
+      metadata_extractor_get_bounding_box_roi(extractor, &tracked_bounding_box_roi);
+
       /* Time to confirm if the object is still present */
-      rect = metadata_extractor_search_for_object_of_interest(extractor, y, width, height);
+      rect = metadata_extractor_search_for_object_of_interest(extractor, y, width, height, &tracked_bounding_box_roi);
       extractor->last_searched_frame = frame_num;
 
       if (!rect) {
@@ -368,7 +350,7 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
     return NULL;
   }
 
-  rect = metadata_extractor_search_for_object_of_interest(extractor, y, width, height);
+  rect = metadata_extractor_search_for_object_of_interest(extractor, y, width, height, NULL);
   extractor->last_searched_frame = frame_num;
 
   if (!rect) {

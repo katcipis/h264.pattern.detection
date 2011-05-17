@@ -61,26 +61,6 @@ void metadata_extractor_free(MetadataExtractor * extractor);
 
 /*!
  *********************************************************************************
- * Extracts the entire raw interest object as a metadata from the Y plane.
- *
- * @param extractor    The MetadataExtractor object.
- * @param frame_number The frame number.
- * @param y            The luma plane, y[i][j] where i is the row and j the column.
- * @param width        The luma plane width.
- * @param height       The luma plane height.
- *
- * @return The metadata or NULL if the interest object is not foundd on the frame.
- *
- *********************************************************************************
- */
-ExtractedMetadata * metadata_extractor_extract_raw_object(MetadataExtractor * extractor,
-                                                          unsigned int frame_number,
-                                                          unsigned char ** y, 
-                                                          int width, 
-                                                          int height);
-
-/*!
- *********************************************************************************
  * Extracts the interest object bounding box as a metadata from the Y plane.
  *
  * @param extractor    The MetadataExtractor object.
