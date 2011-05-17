@@ -390,7 +390,6 @@ struct inp_par_enc
   int object_detection_min_height;                     //!< Min height of the object that will be detected.
   int object_detection_search_hysteresis;              //!< Search for new object hysteresys (in frames).
   int object_detection_tracking_hysteresis;            //!< Confirm tracked object existence hysteresis (in frames).
-  double object_detection_tracking_scale_factor;       //!< Scale factor to apply on the tracked object bouding box when redetection is required.
   char object_detection_training_file[FILE_NAME_SIZE]; //!< File containing the training info used on the object detection.
 };
 

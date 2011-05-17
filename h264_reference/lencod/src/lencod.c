@@ -228,7 +228,6 @@ int main(int argc, char **argv)
                                                               p_Enc->p_Inp->object_detection_min_height,
                                                               p_Enc->p_Inp->object_detection_search_hysteresis,
                                                               p_Enc->p_Inp->object_detection_tracking_hysteresis,
-                                                              p_Enc->p_Inp->object_detection_tracking_scale_factor,
                                                               p_Enc->p_Inp->object_detection_training_file);
 
     if (!p_Enc->p_Vid->metadata_extractor) {

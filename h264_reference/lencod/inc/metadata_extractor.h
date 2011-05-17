@@ -31,7 +31,6 @@ typedef struct _MetadataExtractor MetadataExtractor;
  * @param min_height            Min height of the object that will be detected.
  * @param search_hysteresis     Search for new object hysteresys (in frames).
  * @param tracking_hysteresis   Confirm tracked object existence hysteresis (in frames).
- * @param tracking_scale_factor Scale factor to apply on the tracked object bouding box when redetection is required.
  * @param training_file         File containing the training info used on the object detection.
  *
  * @return A MetadataExtractor object.
@@ -43,7 +42,6 @@ MetadataExtractor * metadata_extractor_new(int min_width,
                                            int min_height,
                                            int search_hysteresis,
                                            int tracking_hysteresis,
-                                           double tracking_scale_factor,
                                            const char * training_file);
 
 
