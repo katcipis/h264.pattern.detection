@@ -385,12 +385,13 @@ struct inp_par_enc
   int videoCode;                        //!< 1 - 709, 3 - 601:  See VideoCode in io_tiff.
 
   /* KATCIPIS adding configuration for Object detection/ tracking */
-  int object_detection_enable;
-  int object_detection_min_width;
-  int object_detection_min_height;
-  int object_detection_search_hysteresis;
-  int object_detection_tracking_hysteresis;
-  char object_detection_training_file[FILE_NAME_SIZE];
+  int object_detection_enable;                         //!< Enable/Disable object detection.
+  int object_detection_min_width;                      //!< Min width of the object that will be detected.
+  int object_detection_min_height;                     //!< Min height of the object that will be detected.
+  int object_detection_search_hysteresis;              //!< Search for new object hysteresys (in frames).
+  int object_detection_tracking_hysteresis;            //!< Confirm tracked object existence hysteresis (in frames).
+  double object_detection_tracking_scale_factor;       //!< Scale factor to apply on the tracked object bouding box when redetection is required.
+  char object_detection_training_file[FILE_NAME_SIZE]; //!< File containing the training info used on the object detection.
 };
 
 #endif

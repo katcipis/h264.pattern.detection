@@ -17,11 +17,12 @@
 
 #define DEFAULTCONFIGFILENAME "encoder.cfg"
 
-#define PROFILE_IDC                          88
-#define LEVEL_IDC                            21
-#define OBJECT_DETECTION_ACTIVATE             1 /* Object detection activated */
-#define OBJECT_DETECTION_MIN_WIDTH           30 /* Min width of the object in pixels */
-#define OBJECT_DETECTION_MIN_HEIGHT          30 /* Min height of the object in pixels */
+#define PROFILE_IDC                            88
+#define LEVEL_IDC                              21
+#define OBJECT_DETECTION_ACTIVATE              1 /* Object detection activated */
+#define OBJECT_DETECTION_MIN_WIDTH             30 /* Min width of the object in pixels */
+#define OBJECT_DETECTION_MIN_HEIGHT            30 /* Min height of the object in pixels */
+#define OBJECT_DETECTION_TRACKING_SCALE_FACTOR 1.2f /* Scale factor to apply on the tracked object bouding box when redetection is required. */
 
 /* Hysteresis (in frame numbers) between each object search */
 #define OBJECT_DETECTION_SEARCH_HYSTERESIS   30 
@@ -518,6 +519,7 @@ Mapping Map[] = {
     {"object_detection_enable",                &cfgparams.object_detection_enable,                0,  OBJECT_DETECTION_ACTIVATE,             1,  0.0,              1.0,     },
     {"object_detection_search_hysteresis",     &cfgparams.object_detection_search_hysteresis,     0,  OBJECT_DETECTION_SEARCH_HYSTERESIS,    0,  0.0,              0.0,     },
     {"object_detection_tracking_hysteresis",   &cfgparams.object_detection_tracking_hysteresis,   0,  OBJECT_DETECTION_TRACKING_HYSTERESIS,  0,  0.0,              0.0,     },
+    {"object_detection_tracking_scale_factor", &cfgparams.object_detection_tracking_scale_factor, 0,  (double) OBJECT_DETECTION_TRACKING_SCALE_FACTOR, 0,  0.0,              0.0,     },
     {"object_detection_min_width",             &cfgparams.object_detection_min_width,             0,  OBJECT_DETECTION_MIN_WIDTH,            0,  0.0,              0.0,     },
     {"object_detection_min_height",            &cfgparams.object_detection_min_height,            0,  OBJECT_DETECTION_MIN_HEIGHT,           0,  0.0,              0.0,     },
     {"object_detection_training_file",         &cfgparams.object_detection_training_file,         1,  0.0,                                   0,  0.0,              0.0,  FILE_NAME_SIZE,},

@@ -1,4 +1,5 @@
 #include "metadata_extractor.h"
+
 #include <cv.h>
 #include <cvaux.h>
 #include <highgui.h>
@@ -12,12 +13,16 @@
 
 typedef struct _TrackedBoundigBox {
   unsigned int id;
-  short x;
-  short y;
+  
+  /* double x,y is used so we dont lose small movement information */
+  double x; 
+  double y;
   short width;
   short height;
-  int motion_x;
-  int motion_y;
+
+  /* double ME is used so we dont lose small movement information */
+  double motion_x;
+  double motion_y;
   int motion_samples;
 } TrackedBoundigBox;
 
@@ -44,6 +49,9 @@ struct _MetadataExtractor {
   /* Search/Tracking hysteresis */
   unsigned int search_hysteresis;
   unsigned int tracking_hysteresis;
+  
+  /* Tracking scale factor */
+  double tracking_scale_factor;
 
   /* Last frame that we did a full search */
   unsigned int last_searched_frame;
@@ -58,11 +66,11 @@ static const int DEFAULT_MIN_NEIGHBORS   = 3;
 
 
 /* Private TrackedBoundigBox functions */
-static TrackedBoundigBox * metadata_extractor_tracked_bounding_box_new(CvRect* area);
-static void metadata_extractor_tracked_bounding_box_update(TrackedBoundigBox * obj, CvRect* area);
-static void metadata_extractor_tracked_bounding_box_free(TrackedBoundigBox * obj);
-static void metadata_extractor_tracked_bounding_box_estimate_motion(TrackedBoundigBox * obj);
-static int metadata_extractor_tracked_bounding_box_block_is_inside(short x, short y, TrackedBoundigBox * obj);
+static TrackedBoundigBox * tracked_bounding_box_new(CvRect* area);
+static void tracked_bounding_box_update(TrackedBoundigBox * obj, CvRect* area);
+static void tracked_bounding_box_free(TrackedBoundigBox * obj);
+static void tracked_bounding_box_estimate_motion(TrackedBoundigBox * obj);
+static int tracked_bounding_box_block_is_inside(short x, short y, TrackedBoundigBox * obj);
 
 /*!
  *************************************************************************************
@@ -76,6 +84,7 @@ MetadataExtractor * metadata_extractor_new(int min_width,
                                            int min_height,
                                            int search_hysteresis,
                                            int tracking_hysteresis,
+                                           double tracking_scale_factor,
                                            const char * training_file)
 {
 
@@ -112,7 +121,7 @@ MetadataExtractor * metadata_extractor_new(int min_width,
 void metadata_extractor_free(MetadataExtractor * extractor)
 {
   /* TODO free opencv stuff */
-  metadata_extractor_tracked_bounding_box_free(extractor->tracked_bounding_box);
+  tracked_bounding_box_free(extractor->tracked_bounding_box);
   free(extractor);
 }
 
@@ -181,7 +190,7 @@ static const int BLOCK_SIZE = 4;
 
 
 /* Private TrackedBoundigBox functions */
-static TrackedBoundigBox * metadata_extractor_tracked_bounding_box_new(CvRect* area)
+static TrackedBoundigBox * tracked_bounding_box_new(CvRect* area)
 {
   static unsigned int tracked_bounding_box_id = 0;
 
@@ -192,13 +201,13 @@ static TrackedBoundigBox * metadata_extractor_tracked_bounding_box_new(CvRect* a
   }
 
   obj->id = tracked_bounding_box_id;
-  metadata_extractor_tracked_bounding_box_update(obj, area);
+  tracked_bounding_box_update(obj, area);
 
   tracked_bounding_box_id++;
   return obj;
 }
 
-static void metadata_extractor_tracked_bounding_box_update(TrackedBoundigBox * box, CvRect* area)
+static void tracked_bounding_box_update(TrackedBoundigBox * box, CvRect* area)
 {
   box->x              = area->x;
   box->y              = area->y;
@@ -209,29 +218,33 @@ static void metadata_extractor_tracked_bounding_box_update(TrackedBoundigBox * b
   box->motion_samples = 0;
 }
 
-static void metadata_extractor_tracked_bounding_box_free(TrackedBoundigBox * obj)
+static void tracked_bounding_box_free(TrackedBoundigBox * obj)
 {
   free(obj);
 }
 
-static void metadata_extractor_tracked_bounding_box_estimate_motion(TrackedBoundigBox * obj) 
+static void tracked_bounding_box_estimate_motion(TrackedBoundigBox * obj) 
 {
-  printf("\nmetadata_extractor_tracked_bounding_box_estimate_motion: motion_x[%d] motion_y[%d] motion_samples[%d]\n",
+  printf("\ntracked_bounding_box_estimate_motion: total_motion_x[%f] total_motion_y[%f] motion_samples[%d]\n",
          obj->motion_x, obj->motion_y, obj->motion_samples);
 
   /* A simple arithmetic mean of all the vectors */
-  printf("metadata_extractor_tracked_bounding_box_estimate_motion: x_mov[%d] y_mov[%d]\n\n", 
+  printf("tracked_bounding_box_estimate_motion: x_mov[%f] y_mov[%f]\n", 
          obj->motion_x / obj->motion_samples, obj->motion_y / obj->motion_samples);
+
+  printf("tracked_bounding_box_estimate_motion: old_x[%f] old_y[%f]\n", obj->x, obj->y);
 
   obj->x -= obj->motion_x / obj->motion_samples;
   obj->y -= obj->motion_y / obj->motion_samples;
+
+  printf("tracked_bounding_box_estimate_motion: new_x[%f] new_y[%f]\n\n", obj->x, obj->y);
 
   obj->motion_x       = 0;
   obj->motion_y       = 0;
   obj->motion_samples = 0;
 }
 
-static int metadata_extractor_tracked_bounding_box_block_is_inside(short x, short y, TrackedBoundigBox * obj)
+static int tracked_bounding_box_block_is_inside(short x, short y, TrackedBoundigBox * obj)
 {
   /* Not going to intersect the block area with the object area, for simplicity */
 
@@ -321,18 +334,18 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
 
       if (!rect) {
         /* We are tracking something that no longer exists. */
-        metadata_extractor_tracked_bounding_box_free(extractor->tracked_bounding_box);
+        tracked_bounding_box_free(extractor->tracked_bounding_box);
         extractor->tracked_bounding_box = NULL;
         return NULL;
       }
 
       /* We still have the object. It would be good to have some heuristic to verify if it is the same object */
-      metadata_extractor_tracked_bounding_box_update(extractor->tracked_bounding_box, rect);
+      tracked_bounding_box_update(extractor->tracked_bounding_box, rect);
 
     } else {
 
       /* Just use ME information  */
-      metadata_extractor_tracked_bounding_box_estimate_motion(extractor->tracked_bounding_box);
+      tracked_bounding_box_estimate_motion(extractor->tracked_bounding_box);
 
     }
 
@@ -359,7 +372,7 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
     return NULL;
   }
 
-  extractor->tracked_bounding_box = metadata_extractor_tracked_bounding_box_new(rect); 
+  extractor->tracked_bounding_box = tracked_bounding_box_new(rect); 
   return (ExtractedMetadata *) extracted_object_bounding_box_new(extractor->tracked_bounding_box->id, 
                                                                  frame_num, 
                                                                  extractor->tracked_bounding_box->x, 
@@ -374,11 +387,11 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
 void metadata_extractor_add_motion_estimation_info(MetadataExtractor * extractor, 
                                                    short blk_x, 
                                                    short blk_y,
-                                                   short x_motion_estimation,
-                                                   short y_motion_estimation)
+                                                   double x_motion_estimation,
+                                                   double y_motion_estimation)
 {
-  /* Macroblock size 16X16, Block size is 4. (see lencod/inc/defines.h)
-     Block_pos * 4 = real_pos */
+  /* Block size is 4x4. (see lencod/inc/defines.h)
+     block_pos * BLOCK_SIZE = real_pos */
   short x = blk_x * BLOCK_SIZE;
   short y = blk_y * BLOCK_SIZE;
 
@@ -389,7 +402,7 @@ void metadata_extractor_add_motion_estimation_info(MetadataExtractor * extractor
 
   
   /* Lets test if this block is inside our object area.  */
-  if (!metadata_extractor_tracked_bounding_box_block_is_inside(x, y, extractor->tracked_bounding_box)) {
+  if (!tracked_bounding_box_block_is_inside(x, y, extractor->tracked_bounding_box)) {
     /* Ignore this block info */
     return;
   }

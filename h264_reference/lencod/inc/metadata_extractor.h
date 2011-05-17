@@ -27,22 +27,24 @@ typedef struct _MetadataExtractor MetadataExtractor;
  *********************************************************************************
  * Creates a new metadata extractor.  
  *
- * @param object_detection_min_width           Min width of the object that will be detected.
- * @param object_detection_min_height          Min height of the object that will be detected.
- * @param object_detection_search_hysteresis   Search for new object hysteresys (in frames).
- * @param object_detection_tracking_hysteresis Confirm tracked object existence hysteresis (in frames).
- * @param object_detection_training_file       File containing the training info used on the object detection.
+ * @param min_width             Min width of the object that will be detected.
+ * @param min_height            Min height of the object that will be detected.
+ * @param search_hysteresis     Search for new object hysteresys (in frames).
+ * @param tracking_hysteresis   Confirm tracked object existence hysteresis (in frames).
+ * @param tracking_scale_factor Scale factor to apply on the tracked object bouding box when redetection is required.
+ * @param training_file         File containing the training info used on the object detection.
  *
  * @return A MetadataExtractor object.
  *
  *
  *********************************************************************************
  */
-MetadataExtractor * metadata_extractor_new(int object_detection_min_width,
-                                           int object_detection_min_height,
-                                           int object_detection_search_hysteresis,
-                                           int object_detection_tracking_hysteresis,
-                                           const char * object_detection_training_file);
+MetadataExtractor * metadata_extractor_new(int min_width,
+                                           int min_height,
+                                           int search_hysteresis,
+                                           int tracking_hysteresis,
+                                           double tracking_scale_factor,
+                                           const char * training_file);
 
 
 /*!
@@ -114,7 +116,7 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
 void metadata_extractor_add_motion_estimation_info(MetadataExtractor * extractor,
                                                    short block_x, 
                                                    short block_y,
-                                                   short x_motion_estimation,
-                                                   short y_motion_estimation);
+                                                   double x_motion_estimation,
+                                                   double y_motion_estimation);
 
 #endif
