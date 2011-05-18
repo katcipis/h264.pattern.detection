@@ -367,3 +367,54 @@ void metadata_extractor_add_motion_estimation_info(MetadataExtractor * extractor
   extractor->tracked_bounding_box->motion_y += y_motion_estimation;
   extractor->tracked_bounding_box->motion_samples++;
 }
+
+/*!
+*************************************************************************************
+* \brief
+* Function body for extract metadata from the y image plane.
+*
+* \return
+* A ExtractedMetadata object or NULL in case no metadata is extracted.
+*
+*************************************************************************************
+*/
+ExtractedMetadata * metadata_extractor_extract_raw_object(MetadataExtractor * extractor,
+                                                          unsigned int frame_num,
+                                                          unsigned char ** y,
+                                                          int width,
+                                                          int height)
+{
+  /* First we must convert the Y luma plane to BGR and them to grayscale.
+On grayscale Y = R = G = B. Pretty simple to convert. */
+
+  ExtractedYImage * metadata = NULL;
+  CvRect* res = NULL;
+
+  res = metadata_extractor_search_for_object_of_interest(extractor, y, width, height);
+
+  if (!res) {
+      return NULL;
+  }
+
+  metadata = extracted_y_image_new(frame_num, res->width, res->height);
+
+  unsigned char ** y_plane = extracted_y_image_get_y(metadata);
+  int metadata_row = 0;
+  int row = 0;
+  int col = 0;
+
+  /* Copy the object from the original frame */
+  for (row = res->y; row < (res->height + res->y); row++) {
+
+    int metadata_col = 0;
+
+    for (col = res->x; col < (res->width + res->x); col ++) {
+        y_plane[metadata_row][metadata_col] = y[row][col];
+        metadata_col++;
+    }
+    metadata_row++;
+  }
+
+  return (ExtractedMetadata *) metadata;
+}
+
