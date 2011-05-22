@@ -576,8 +576,6 @@ static void write_out_picture(VideoParameters *p_Vid, StorablePicture *p, int p_
     /* Lets process and free the metadata relative to the current frame */
    decoder_draw_bounding_box(metadata, p);
    extracted_metadata_free(metadata);
-
-   /* Next frame does not have a metadata yet */
    metadata = NULL;
  }
 
