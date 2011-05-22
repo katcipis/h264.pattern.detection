@@ -224,6 +224,7 @@ int main(int argc, char **argv)
 
   /* KATCIPIS - init metadata extractor */
   if (p_Enc->p_Inp->object_detection_enable) {
+    printf("Enabled object detection \n");
     p_Enc->p_Vid->metadata_extractor = metadata_extractor_new(p_Enc->p_Inp->object_detection_min_width,
                                                               p_Enc->p_Inp->object_detection_min_height,
                                                               p_Enc->p_Inp->object_detection_search_hysteresis,
@@ -234,6 +235,9 @@ int main(int argc, char **argv)
       printf("ERROR CREATING METADATA EXTRACTOR !!!!\n");
       return -1;
     }
+  } else {
+    printf("Disabled object detection \n");
+    p_Enc->p_Vid->metadata_extractor = NULL;
   }
 
   // init encoder
@@ -245,7 +249,10 @@ int main(int argc, char **argv)
   // terminate sequence
   free_encoder_memory(p_Enc->p_Vid, p_Enc->p_Inp);
 
-  metadata_extractor_free(p_Enc->p_Vid->metadata_extractor);
+  if (p_Enc->p_Inp->object_detection_enable && p_Enc->p_Vid->metadata_extractor) {
+    metadata_extractor_free(p_Enc->p_Vid->metadata_extractor);
+  }
+
   free_params (p_Enc->p_Inp);  
   free_encoder(p_Enc);
 
