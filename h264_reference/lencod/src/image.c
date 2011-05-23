@@ -265,7 +265,7 @@ static void code_a_plane(VideoParameters *p_Vid, InputParameters *p_Inp)
     else
       distortion.value[0] = distortion.value[1] = distortion.value[2] = 0;
 
-    /* KATCIPIS - Good place to get ME information - Still missing the mb size and the vectors */
+    /* KATCIPIS - Good place to get ME information */
     get_motion_estimation_information(p_Vid);
     /* KATCIPIS - Done */
 

@@ -94,8 +94,8 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
 void metadata_extractor_add_motion_estimation_info(MetadataExtractor * extractor,
                                                    short block_x, 
                                                    short block_y,
-                                                   double x_motion_estimation,
-                                                   double y_motion_estimation);
+                                                   short x_motion_estimation,
+                                                   short y_motion_estimation);
 
 
 /*!

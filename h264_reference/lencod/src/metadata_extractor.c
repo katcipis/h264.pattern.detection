@@ -339,8 +339,8 @@ ExtractedMetadata * metadata_extractor_extract_object_bounding_box(MetadataExtra
 void metadata_extractor_add_motion_estimation_info(MetadataExtractor * extractor, 
                                                    short blk_x, 
                                                    short blk_y,
-                                                   double x_motion_estimation,
-                                                   double y_motion_estimation)
+                                                   short x_motion_estimation,
+                                                   short y_motion_estimation)
 {
   /* Block size is 4x4. (see lencod/inc/defines.h)
      block_pos * BLOCK_SIZE = real_pos */
