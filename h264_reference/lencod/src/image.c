@@ -266,7 +266,9 @@ static void code_a_plane(VideoParameters *p_Vid, InputParameters *p_Inp)
       distortion.value[0] = distortion.value[1] = distortion.value[2] = 0;
 
     /* KATCIPIS - Good place to get ME information */
-    get_motion_estimation_information(p_Vid);
+    if (p_Inp->object_detection_enable) {
+      get_motion_estimation_information(p_Vid);
+    }
     /* KATCIPIS - Done */
 
     DeblockFrame (p_Vid, p_Vid->enc_picture->imgY, p_Vid->enc_picture->imgUV); //comment out to disable deblocking filter
@@ -1208,6 +1210,7 @@ int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp)
   process_image(p_Vid, p_Inp);
 
   if (p_Inp->object_detection_enable) {
+
     /*  KATCIPIS - This sounds like a good place to process the raw Y imgData. */
     ExtractedMetadata * metadata = metadata_extractor_extract_object_bounding_box(p_Vid->metadata_extractor,
                                                                                   p_Vid->frame_no,
