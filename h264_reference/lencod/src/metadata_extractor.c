@@ -225,28 +225,15 @@ static void tracked_bounding_box_free(TrackedBoundigBox * obj)
 
 static void tracked_bounding_box_estimate_motion(TrackedBoundigBox * obj) 
 {
-  printf("\n================ OBJECT TRACKING INFO ================\n");
-
-  printf("tracked_bounding_box_estimate_motion: total_motion_x[%d] total_motion_y[%d] motion_samples[%d]\n",
-         obj->motion_x, obj->motion_y, obj->motion_samples);
-
   /* A simple arithmetic mean of all the vectors */
-  printf("tracked_bounding_box_estimate_motion: x_mov[%f] y_mov[%f]\n", 
-         ((double) obj->motion_x / QPEL_UNIT) / (double) obj->motion_samples, 
-         ((double) obj->motion_y / QPEL_UNIT) / (double) obj->motion_samples);
-
-  printf("tracked_bounding_box_estimate_motion: old_x[%f] old_y[%f]\n", obj->x, obj->y);
 
   /* Dont want to lose precision (accumulated movement) on the integer division */
   obj->x -= ((double) obj->motion_x / QPEL_UNIT) / (double) obj->motion_samples;
   obj->y -= ((double) obj->motion_y / QPEL_UNIT) / (double) obj->motion_samples;
 
-  printf("tracked_bounding_box_estimate_motion: new_x[%f] new_y[%f]\n", obj->x, obj->y);
-
   obj->motion_x       = 0;
   obj->motion_y       = 0;
   obj->motion_samples = 0;
-  printf("================ OBJECT TRACKING INFO END ================\n\n");
 }
 
 static int tracked_bounding_box_point_is_inside(short x, short y, TrackedBoundigBox * obj)
