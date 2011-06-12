@@ -1,1 +1,1 @@
-rm -f akiyo_qcif.h264 akiyo_stats.dat rec_akiyo_qcif.yuv akiyo_qcif_dec.yuv
+rm -f katcipis.h264 akiyo_stats.dat rec_katcipis.yuv katcipis_dec.yuv
