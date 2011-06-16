@@ -130,9 +130,9 @@ static CvRect* metadata_extractor_search_for_object_of_interest(MetadataExtracto
                                                                 int width, 
                                                                 int height)
 {
-  IplImage * frame                   = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
-  IplImage * gray                    = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
-  CvSeq* results                     = NULL;
+  IplImage * frame = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
+  IplImage * gray  = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
+  CvSeq* results   = NULL;
 
   int frame_i = 0;
   int row     = 0;
