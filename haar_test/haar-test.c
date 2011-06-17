@@ -41,7 +41,26 @@ static int get_bit_depth(int bitdepth)
 
 static void save_detected_objects(IplImage * image, CvSeq* results)
 {
+  static int saved_objects = 0;
+  int parameters[3];
 
+  gchar * object_filename  = g_strdup_printf(FOUND_OBJECT_PATH_FORMAT, saved_objects);
+
+  saved_objects++;
+
+  if (results->total != 1) {
+    g_error("There must be only one result !!!!");
+  }
+
+  parameters[0] = CV_IMWRITE_JPEG_QUALITY;
+  parameters[1] = 100;
+  parameters[2] = 0;
+
+  cvSetImageROI(image, *((CvRect*)cvGetSeqElem(results, 0)));
+  cvSaveImage(object_filename, image, parameters);  
+
+  cvResetImageROI(image);
+  g_free(object_filename);
 }
 
 
