@@ -9,6 +9,7 @@
 */
 #include <cv.h>	      /* for OpenCV basic structures for ex.: IPLImage */
 #include <highgui.h>  /* for OpenCV functions like cvCvtColor */
+#include <glib.h>
 #include <stdio.h>
 
 
@@ -50,6 +51,7 @@ int main(int argc, char **argv)
   /* Test stuff */
   IplImage * image        = NULL;
   IplImage * gray_image   = NULL;
+  GTimer * timer          = NULL;
   FILE * input_video_file = NULL;
   int bytedepth           = 0;
   int total_objects_found = 0;  
@@ -57,6 +59,9 @@ int main(int argc, char **argv)
   int width               = 0;
   int frame_size          = 0;
   int total_frames        = 0;
+  gdouble min_elapsed     = G_MAXDOUBLE;
+  gdouble max_elapsed     = 0;
+  gdouble total_elapsed   = 0;
 
 
   if (argc < 6) {
@@ -82,16 +87,20 @@ int main(int argc, char **argv)
   frame_size = width * height * NUM_CHANNELS;
   storage    = cvCreateMemStorage(0);
   classifier = (CvHaarClassifierCascade*) cvLoad(argv[1], 0, 0, 0 );
+  timer      = g_timer_new();
 
   while (fread(image->imageData, bytedepth, frame_size, input_video_file) == frame_size) {
-    CvSeq* results = NULL;
- 
+    CvSeq* results  = NULL;
+    gdouble elapsed = 0; 
+
     cvCvtColor(image, gray_image, CV_BGR2GRAY);
 
     /* cvEqualizeHist spreads out the brightness values necessary because the integral image 
      features are based on differences of rectangle regions and, if the histogram is not balanced, 
      these differences might be skewed by overall lighting or exposure of the test images. */
     cvEqualizeHist(gray_image, gray_image);
+
+    g_timer_start(timer);
 
     results =  cvHaarDetectObjects (gray_image,
                                     classifier,
@@ -101,6 +110,17 @@ int main(int argc, char **argv)
                                     haar_flags,
                                     min_size);
 
+    elapsed = g_timer_elapsed (timer, NULL);
+
+    if (elapsed < min_elapsed) {
+      min_elapsed = elapsed 
+    }
+ 
+    if (elapsed > max_elapsed) { 
+      max_elapsed = max_elapsed;
+    }
+
+    total_elapsed += elapsed;
     total_objects_found += results->total;
     total_frames++;
     /* Results belongs to the storage, it will be freed later */
@@ -115,7 +135,11 @@ int main(int argc, char **argv)
   cvClearMemStorage(storage);
   fclose(input_video_file);
 
-  printf("<<<<<< Identified [%d] objects on a video with [%d] frames >>>>>\n", total_objects_found, total_frames);
+  printf("\n\n====================================================================================================\n");
+  printf("Identified [%d] objects on a video with [%d] frames \n", total_objects_found, total_frames);
+  printf("Haar profiling (seconds): min elapsed[%f] max elapsed[%f] total elapsed[%f] mean elapsed[%f]\n", 
+         min_elapsed, max_elapsed, total_elapsed, total_elapsed / total_frames);
+  printf("========================================================================================================\n\n");
 
   return 0;
 }
