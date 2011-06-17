@@ -13,12 +13,13 @@
 #include <stdio.h>
 
 
-static const int NUM_CHANNELS      = 3;
-static const int MIN_OBJECT_WIDTH  = 30;
-static const int MIN_OBJECT_HEIGHT = 30;
+static const int NUM_CHANNELS                = 3;
+static const int MIN_OBJECT_WIDTH            = 30;
+static const int MIN_OBJECT_HEIGHT           = 30;
+static const char * FOUND_OBJECT_PATH_FORMAT = "found_objects/object_%d";
 
 
-int get_bit_depth(int bitdepth)
+static int get_bit_depth(int bitdepth)
 {
   switch (bitdepth){
   
@@ -38,13 +39,19 @@ int get_bit_depth(int bitdepth)
 }
 
 
+static void save_detected_objects(IplImage * image, CvSeq* results)
+{
+
+}
+
+
 int main(int argc, char **argv)
 {
   /* OpenCV Haar config, its the same used on the H.264 encoder */
   CvHaarClassifierCascade * classifier = NULL;
   CvMemStorage * storage = NULL;
   double scale_factor    = 1.1f;
-  int min_neighbors     = 3;
+  int min_neighbors      = 3;
   int haar_flags         = CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_DO_ROUGH_SEARCH | CV_HAAR_DO_CANNY_PRUNING; 
   CvSize min_size;
  
@@ -119,6 +126,8 @@ int main(int argc, char **argv)
     if (elapsed > max_elapsed) { 
       max_elapsed = max_elapsed;
     }
+
+    save_detected_objects(image, results);
 
     total_elapsed += elapsed;
     total_objects_found += results->total;
