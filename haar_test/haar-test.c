@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     elapsed = g_timer_elapsed (timer, NULL);
 
     if (elapsed < min_elapsed) {
-      min_elapsed = elapsed 
+      min_elapsed = elapsed; 
     }
  
     if (elapsed > max_elapsed) { 
