@@ -1,1 +1,1 @@
-rm -f crew_cif.h264 akiyo_stats.dat rec_crew_cif.yuv crew_cif_dec.yuv
+rm -f foreman.h264 foreman.dat rec_foreman.yuv foreman_dec.yuv
