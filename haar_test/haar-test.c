@@ -69,9 +69,9 @@ int main(int argc, char **argv)
   gdouble total_elapsed   = 0;
 
 
-  if (argc < 6) {
-    printf("Usage: %s <haar training filename> <video file name> <bit depth> <width> <height>\n", argv[0]);
-    printf("The video file must be RAW RGB with 24 bits BPP (8 bits per channel) \n");
+  if (argc < 5) {
+    printf("Usage: %s <haar training filename> <video file name> <width> <height>\n", argv[0]);
+    printf("The video file must be RAW YUV 4:2:0 (YUV - I420). Bit depth must be 8. \n");
     return -1;
   }
 
@@ -89,16 +89,30 @@ int main(int argc, char **argv)
   printf("\nStarting Haar test, width[%d] height[%d] object min size[%d][%d] scale factor[%f] min_neighbors[%d]\n\n", 
          width, height, min_size.height, min_size.width, scale_factor, min_neighbors);
 
-  frame_size = width * height * NUM_CHANNELS;
+  /* Luma is full resolution, 2 croma are quarter resolution */
+  frame_size = width * height * 2;
   storage    = cvCreateMemStorage(0);
   classifier = (CvHaarClassifierCascade*) cvLoad(argv[1], 0, 0, 0 );
   timer      = g_timer_new();
 
-  while (fread(image->imageData, 1, frame_size, input_video_file) == frame_size) {
+  while (fread(buffer, 1, frame_size, input_video_file) == frame_size) {
     CvSeq* results  = NULL;
     gdouble elapsed = 0; 
+    int row, col;
 
-    cvCvtColor(image, gray_image, CV_RGB2GRAY);
+    /* We must write R G B with the same Y sample. Just as is done on the MetadataExtractor */
+    for (row = 0; row < height; row++) {
+
+      for (col = 0; col < width; col++) {
+
+        frame->imageData[frame_i]     = buffer[row][col];
+        frame->imageData[frame_i + 1] = buffer[row][col];
+        frame->imageData[frame_i + 2] = buffer[row][col];
+        frame_i += 3;
+      }
+    }
+
+    cvCvtColor(image, gray_image, CV_BGR2GRAY);
 
     /* cvEqualizeHist spreads out the brightness values necessary because the integral image 
      features are based on differences of rectangle regions and, if the histogram is not balanced, 
