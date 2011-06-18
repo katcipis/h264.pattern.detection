@@ -19,26 +19,6 @@ static const int MIN_OBJECT_HEIGHT           = 30;
 static const char * FOUND_OBJECT_PATH_FORMAT = "found_objects/object_%d";
 
 
-static int get_bit_depth(int bitdepth)
-{
-  switch (bitdepth){
-  
-    case 8:
-      return IPL_DEPTH_8U;
-
-    case 16:
-      return IPL_DEPTH_16S;
-
-    case 32:
-      return IPL_DEPTH_32S;
-
-    default:
-      printf("get_bit_depth: Unsupported bitdepth[%d] !!!\n", bitdepth);
-      exit(-1);
-  }
-}
-
-
 static void save_detected_objects(IplImage * image, CvSeq* results)
 {
   static int saved_objects = 0;
@@ -79,7 +59,6 @@ int main(int argc, char **argv)
   IplImage * gray_image   = NULL;
   GTimer * timer          = NULL;
   FILE * input_video_file = NULL;
-  int bytedepth           = 0;
   int total_objects_found = 0;  
   int height              = 0;
   int width               = 0;
@@ -92,34 +71,34 @@ int main(int argc, char **argv)
 
   if (argc < 6) {
     printf("Usage: %s <haar training filename> <video file name> <bit depth> <width> <height>\n", argv[0]);
+    printf("The video file must be RAW RGB with 24 bits BPP (8 bits per channel) \n");
     return -1;
   }
 
-  bytedepth = atoi(argv[3]) / 8;
   width     = atoi(argv[4]);
   height    = atoi(argv[5]);
 
   input_video_file = fopen(argv[2], "r");
 
-  image            = cvCreateImage(cvSize(width, height), get_bit_depth(atoi(argv[3])), NUM_CHANNELS);
-  gray_image       = cvCreateImage(cvSize(width, height), get_bit_depth(atoi(argv[3])), 1);
+  image            = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, NUM_CHANNELS);
+  gray_image       = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
 
   min_size.width   = MIN_OBJECT_WIDTH;
   min_size.height  = MIN_OBJECT_HEIGHT;
 
-  printf("\nStarting Haar test, bytedepth[%d] width[%d] height[%d] object min size[%d][%d] scale factor[%f] min_neighbors[%d]\n\n", 
-         bytedepth, width, height, min_size.height, min_size.width, scale_factor, min_neighbors);
+  printf("\nStarting Haar test, width[%d] height[%d] object min size[%d][%d] scale factor[%f] min_neighbors[%d]\n\n", 
+         width, height, min_size.height, min_size.width, scale_factor, min_neighbors);
 
   frame_size = width * height * NUM_CHANNELS;
   storage    = cvCreateMemStorage(0);
   classifier = (CvHaarClassifierCascade*) cvLoad(argv[1], 0, 0, 0 );
   timer      = g_timer_new();
 
-  while (fread(image->imageData, bytedepth, frame_size, input_video_file) == frame_size) {
+  while (fread(image->imageData, 1, frame_size, input_video_file) == frame_size) {
     CvSeq* results  = NULL;
     gdouble elapsed = 0; 
 
-    cvCvtColor(image, gray_image, CV_BGR2GRAY);
+    cvCvtColor(image, gray_image, CV_RGB2GRAY);
 
     /* cvEqualizeHist spreads out the brightness values necessary because the integral image 
      features are based on differences of rectangle regions and, if the histogram is not balanced, 

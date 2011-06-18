@@ -514,8 +514,6 @@ void extracted_metadata_buffer_add(ExtractedMetadataBuffer * buffer, ExtractedMe
     return;
   }
 
-  printf("extracted_metadata_buffer_add: add new metadata, frame_number[%d]\n", obj->frame_number);
-
   buffer->ringbuffer[buffer->write_index] = obj;
   buffer->write_index                     = new_write_index;
 }
