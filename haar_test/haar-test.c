@@ -1,8 +1,7 @@
 /*
-* This test simply process a raw BGR video on OpenCV Haar, The bit depth must be from 8, 16 or 32 bits (Integer).
+* This test simply process a raw YUV 4:2:0 video on OpenCV Haar.
 * It is usefull to measure the quality of openCV using different video configurations (resolution, quality, etc).
-* Haar is configured here the same way it is configured inside the MetadataExtractor used on the H.264 encoder.
-* It will not show the results, it will only report how much interest objects have been found.
+* It will dump the found objects on jpeg files, and report how much interest objects have been found.
 * 
 * @author Tiago Katcipis <tiagokatcipis@gmail.com>. 
 *
@@ -22,39 +21,41 @@ static const char * FOUND_OBJECT_PATH_FORMAT = "found_objects/object_%d";
 static void save_detected_objects(IplImage * image, CvSeq* results)
 {
   static int saved_objects = 0;
+  int i;
   int parameters[3];
 
-  gchar * object_filename  = g_strdup_printf(FOUND_OBJECT_PATH_FORMAT, saved_objects);
+  for (i = 0; i < results->total; i++) {
 
-  saved_objects++;
+    gchar * object_filename  = g_strdup_printf(FOUND_OBJECT_PATH_FORMAT, saved_objects);
+     
+    saved_objects++;
+    parameters[0] = CV_IMWRITE_JPEG_QUALITY;
+    parameters[1] = 100;
+    parameters[2] = 0;
 
-  if (results->total != 1) {
-    g_error("There must be only one result !!!!");
+    cvSetImageROI(image, *((CvRect*)cvGetSeqElem(results, i)));
+    cvSaveImage(object_filename, image, parameters);  
+
+    cvResetImageROI(image);
+    g_free(object_filename);
+
   }
 
-  parameters[0] = CV_IMWRITE_JPEG_QUALITY;
-  parameters[1] = 100;
-  parameters[2] = 0;
-
-  cvSetImageROI(image, *((CvRect*)cvGetSeqElem(results, 0)));
-  cvSaveImage(object_filename, image, parameters);  
-
-  cvResetImageROI(image);
-  g_free(object_filename);
 }
 
 
 int main(int argc, char **argv)
 {
-  /* OpenCV Haar config, its the same used on the H.264 encoder */
+  /* OpenCV Haar config. */
   CvHaarClassifierCascade * classifier = NULL;
   CvMemStorage * storage = NULL;
   double scale_factor    = 1.1f;
   int min_neighbors      = 3;
-  int haar_flags         = CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_DO_ROUGH_SEARCH | CV_HAAR_DO_CANNY_PRUNING; 
+  int haar_flags         = CV_HAAR_DO_CANNY_PRUNING; 
   CvSize min_size;
  
   /* Test stuff */
+  gchar * buffer          = NULL;
   IplImage * image        = NULL;
   IplImage * gray_image   = NULL;
   GTimer * timer          = NULL;
@@ -62,8 +63,8 @@ int main(int argc, char **argv)
   int total_objects_found = 0;  
   int height              = 0;
   int width               = 0;
-  int frame_size          = 0;
-  int total_frames        = 0;
+  int image_size          = 0;
+  int total_images        = 0;
   gdouble min_elapsed     = G_MAXDOUBLE;
   gdouble max_elapsed     = 0;
   gdouble total_elapsed   = 0;
@@ -80,6 +81,7 @@ int main(int argc, char **argv)
 
   input_video_file = fopen(argv[2], "r");
 
+  buffer           = g_slice_alloc(width * height);
   image            = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, NUM_CHANNELS);
   gray_image       = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
 
@@ -89,26 +91,28 @@ int main(int argc, char **argv)
   printf("\nStarting Haar test, width[%d] height[%d] object min size[%d][%d] scale factor[%f] min_neighbors[%d]\n\n", 
          width, height, min_size.height, min_size.width, scale_factor, min_neighbors);
 
-  /* Luma is full resolution, 2 croma are quarter resolution */
-  frame_size = width * height * 2;
+  /* Luma is full resolution, 2 croma are quarter resolution each */
+  image_size = width * height;
   storage    = cvCreateMemStorage(0);
   classifier = (CvHaarClassifierCascade*) cvLoad(argv[1], 0, 0, 0 );
   timer      = g_timer_new();
 
-  while (fread(buffer, 1, frame_size, input_video_file) == frame_size) {
+  /* Lets read only the luma plane */
+  while (fread(buffer, 1, image_size, input_video_file) == image_size) {
+
     CvSeq* results  = NULL;
     gdouble elapsed = 0; 
-    int row, col;
-
+    int row, col, image_i;
+   
     /* We must write R G B with the same Y sample. Just as is done on the MetadataExtractor */
     for (row = 0; row < height; row++) {
 
       for (col = 0; col < width; col++) {
 
-        frame->imageData[frame_i]     = buffer[row][col];
-        frame->imageData[frame_i + 1] = buffer[row][col];
-        frame->imageData[frame_i + 2] = buffer[row][col];
-        frame_i += 3;
+        image->imageData[image_i]     = buffer[row][col];
+        image->imageData[image_i + 1] = buffer[row][col];
+        image->imageData[image_i + 2] = buffer[row][col];
+        image_i += 3;
       }
     }
 
@@ -143,23 +147,27 @@ int main(int argc, char **argv)
 
     total_elapsed += elapsed;
     total_objects_found += results->total;
-    total_frames++;
-    /* Results belongs to the storage, it will be freed later */
+    total_images++;
+
+    /* Results belongs to the storage, it will be freed later.
+       Lets jump the croma information. */
+    fseek(input_video_file, image_size / 2, SEEK_CUR);
   }
 
   if (!feof(input_video_file)) {
-    printf(">>>>>>> An error occured while reading the frames from the video file !!!\n");
+    g_error(">>>>>>> An error occured while reading the images from the video file !!!\n");
   }
 
   cvReleaseImage(&image);
   cvReleaseImage(&gray_image);
   cvClearMemStorage(storage);
+  g_slice_free1(buffer, width * height);
   fclose(input_video_file);
 
   printf("\n\n====================================================================================================\n");
-  printf("Identified [%d] objects on a video with [%d] frames \n", total_objects_found, total_frames);
+  printf("Identified [%d] objects on a video with [%d] images \n", total_objects_found, total_images);
   printf("Haar profiling (seconds): min elapsed[%f] max elapsed[%f] total elapsed[%f] mean elapsed[%f]\n", 
-         min_elapsed, max_elapsed, total_elapsed, total_elapsed / total_frames);
+         min_elapsed, max_elapsed, total_elapsed, total_elapsed / total_images);
   printf("========================================================================================================\n\n");
 
   return 0;
