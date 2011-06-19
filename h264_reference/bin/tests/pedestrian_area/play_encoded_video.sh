@@ -1,1 +1,1 @@
-gst-launch-0.10 -v filesrc location=foreman.h264 ! decodebin2 ! ffmpegcolorspace ! videorate ! autovideosink
+gst-launch-0.10 -v filesrc location=pedestrian_area.h264 ! decodebin2 ! ffmpegcolorspace ! videorate ! autovideosink
