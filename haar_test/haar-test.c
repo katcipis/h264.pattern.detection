@@ -144,7 +144,7 @@ int main(int argc, char **argv)
     }
  
     if (elapsed > max_elapsed) { 
-      max_elapsed = max_elapsed;
+      max_elapsed = elapsed;
     }
 
     save_detected_objects(image, results);
@@ -169,7 +169,7 @@ int main(int argc, char **argv)
   fclose(input_video_file);
 
   printf("\n\n====================================================================================================\n");
-  printf("Identified [%d] objects on a video with [%d] images \n", total_objects_found, total_images);
+  printf("Identified [%d] objects on a video with [%d] frames \n", total_objects_found, total_images);
   printf("Haar profiling (seconds): min elapsed[%f] max elapsed[%f] total elapsed[%f] mean elapsed[%f]\n", 
          min_elapsed, max_elapsed, total_elapsed, total_elapsed / total_images);
   printf("========================================================================================================\n\n");
