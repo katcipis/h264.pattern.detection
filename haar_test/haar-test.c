@@ -15,7 +15,7 @@
 static const int NUM_CHANNELS                = 3;
 static const int MIN_OBJECT_WIDTH            = 30;
 static const int MIN_OBJECT_HEIGHT           = 30;
-static const char * FOUND_OBJECT_PATH_FORMAT = "found_objects/object_%d";
+static const char * FOUND_OBJECT_PATH_FORMAT = "found_objects/object_%d.jpg";
 
 
 static void save_detected_objects(IplImage * image, CvSeq* results)
@@ -76,8 +76,8 @@ int main(int argc, char **argv)
     return -1;
   }
 
-  width     = atoi(argv[4]);
-  height    = atoi(argv[5]);
+  width     = atoi(argv[3]);
+  height    = atoi(argv[4]);
 
   input_video_file = fopen(argv[2], "r");
 
@@ -100,25 +100,24 @@ int main(int argc, char **argv)
   /* Lets read only the luma plane */
   while (fread(buffer, 1, image_size, input_video_file) == image_size) {
 
-    CvSeq* results    = NULL;
-    gdouble elapsed   = 0; 
-    gchar * imageData = image->imageData;
-    int row, col, offset = 0;
-   
+    CvSeq* results     = NULL;
+    gdouble elapsed    = 0; 
+    gchar * imageData  = image->imageData;
+    gchar * luma_plane = buffer;
+    int row, col;
    
     /* We must write R G B with the same Y sample. Just as is done on the MetadataExtractor */
     for (row = 0; row < height; row++) {
 
       for (col = 0; col < width; col++) {
-
-        imageData[0] = buffer[col];
-        imageData[1] = buffer[col];
-        imageData[2] = buffer[col];
+        imageData[0] = luma_plane[col];
+        imageData[1] = luma_plane[col];
+        imageData[2] = luma_plane[col];
         imageData += 3;
 
       }
 
-      buffer += width;
+      luma_plane += width;
     }
 
     cvCvtColor(image, gray_image, CV_BGR2GRAY);
