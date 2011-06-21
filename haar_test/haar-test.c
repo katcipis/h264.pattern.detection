@@ -100,20 +100,25 @@ int main(int argc, char **argv)
   /* Lets read only the luma plane */
   while (fread(buffer, 1, image_size, input_video_file) == image_size) {
 
-    CvSeq* results  = NULL;
-    gdouble elapsed = 0; 
-    int row, col, image_i;
+    CvSeq* results    = NULL;
+    gdouble elapsed   = 0; 
+    gchar * imageData = image->imageData;
+    int row, col, offset = 0;
+   
    
     /* We must write R G B with the same Y sample. Just as is done on the MetadataExtractor */
     for (row = 0; row < height; row++) {
 
       for (col = 0; col < width; col++) {
 
-        image->imageData[image_i]     = buffer[row][col];
-        image->imageData[image_i + 1] = buffer[row][col];
-        image->imageData[image_i + 2] = buffer[row][col];
-        image_i += 3;
+        imageData[0] = buffer[col];
+        imageData[1] = buffer[col];
+        imageData[2] = buffer[col];
+        imageData += 3;
+
       }
+
+      buffer += width;
     }
 
     cvCvtColor(image, gray_image, CV_BGR2GRAY);
@@ -161,7 +166,7 @@ int main(int argc, char **argv)
   cvReleaseImage(&image);
   cvReleaseImage(&gray_image);
   cvClearMemStorage(storage);
-  g_slice_free1(buffer, width * height);
+  g_slice_free1(width * height, buffer);
   fclose(input_video_file);
 
   printf("\n\n====================================================================================================\n");
