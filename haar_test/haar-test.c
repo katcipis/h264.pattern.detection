@@ -73,6 +73,7 @@ int main(int argc, char **argv)
   if (argc < 5) {
     printf("Usage: %s <haar training filename> <video file name> <width> <height>\n", argv[0]);
     printf("The video file must be RAW YUV 4:2:0 (YUV - I420). Bit depth must be 8. \n");
+    printf("Create a found_objects folder where you are going to execute the tests \n\n");
     return -1;
   }
 
