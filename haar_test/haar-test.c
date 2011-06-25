@@ -6,6 +6,8 @@
 * @author Tiago Katcipis <tiagokatcipis@gmail.com>. 
 *
 */
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <cv.h>	      /* for OpenCV basic structures for ex.: IPLImage */
 #include <highgui.h>  /* for OpenCV functions like cvCvtColor */
 #include <glib.h>
@@ -15,10 +17,9 @@
 static const int NUM_CHANNELS                = 3;
 static const int MIN_OBJECT_WIDTH            = 30;
 static const int MIN_OBJECT_HEIGHT           = 30;
-static const char * FOUND_OBJECT_PATH_FORMAT = "found_objects/object_%d.jpg";
 
 
-static void save_detected_objects(IplImage * image, CvSeq* results)
+static void save_detected_objects(IplImage * image, CvSeq* results, const gchar* objects_dir)
 {
   static int saved_objects = 0;
   int i;
@@ -26,7 +27,7 @@ static void save_detected_objects(IplImage * image, CvSeq* results)
 
   for (i = 0; i < results->total; i++) {
 
-    gchar * object_filename  = g_strdup_printf(FOUND_OBJECT_PATH_FORMAT, saved_objects);
+    gchar * object_filename  = g_strdup_printf("%s/object_%d", objects_dir, saved_objects);
      
     saved_objects++;
     parameters[0] = CV_IMWRITE_JPEG_QUALITY;
@@ -43,6 +44,16 @@ static void save_detected_objects(IplImage * image, CvSeq* results)
 
 }
 
+static void create_detected_objects_directory(const gchar * directory_path)
+{
+  int ret = mkdir(directory_path, 1);
+
+  if (ret == -1) {
+    printf("Erro criando diretorio[%s]\n", directory_path);
+    exit(-1);
+  }
+}
+
 
 int main(int argc, char **argv)
 {
@@ -55,20 +66,21 @@ int main(int argc, char **argv)
   CvSize min_size;
  
   /* Test stuff */
-  gchar * buffer          = NULL;
-  IplImage * image        = NULL;
-  IplImage * gray_image   = NULL;
-  GTimer * timer          = NULL;
-  FILE * input_video_file = NULL;
-  int total_objects_found = 0;  
-  int height              = 0;
-  int width               = 0;
-  int image_size          = 0;
-  int total_images        = 0;
-  gdouble min_elapsed     = G_MAXDOUBLE;
-  gdouble max_elapsed     = 0;
-  gdouble total_elapsed   = 0;
-
+  gchar * buffer            = NULL;
+  gchar * found_objects_dir = NULL;
+  IplImage * image          = NULL;
+  IplImage * gray_image     = NULL;
+  GTimer * timer            = NULL;
+  FILE * input_video_file   = NULL;
+  int total_objects_found   = 0;  
+  int height                = 0;
+  int width                 = 0;
+  int image_size            = 0;
+  int total_images          = 0;
+  gdouble min_elapsed       = G_MAXDOUBLE;
+  gdouble max_elapsed       = 0;
+  gdouble total_elapsed     = 0;
+  
 
   if (argc < 5) {
     printf("Usage: %s <haar training filename> <video file name> <width> <height>\n", argv[0]);
@@ -80,7 +92,10 @@ int main(int argc, char **argv)
   width     = atoi(argv[3]);
   height    = atoi(argv[4]);
 
-  input_video_file = fopen(argv[2], "r");
+  input_video_file  = fopen(argv[2], "r");
+  found_objects_dir = g_strdup_printf("%s_found_objects", argv[2]);
+
+  create_detected_objects_directory(found_objects_dir);
 
   buffer           = g_slice_alloc(width * height);
   image            = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, NUM_CHANNELS);
@@ -148,7 +163,7 @@ int main(int argc, char **argv)
       max_elapsed = elapsed;
     }
 
-    save_detected_objects(image, results);
+    save_detected_objects(image, results, found_objects_dir);
 
     total_elapsed += elapsed;
     total_objects_found += results->total;
@@ -166,7 +181,8 @@ int main(int argc, char **argv)
   cvReleaseImage(&image);
   cvReleaseImage(&gray_image);
   cvClearMemStorage(storage);
-  g_slice_free1(width * height, buffer);
+  g_slice_free1(width * height, buffer); 
+  g_free(found_objects_dir);
   fclose(input_video_file);
 
   printf("\n\n====================================================================================================\n");
