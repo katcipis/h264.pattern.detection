@@ -19,34 +19,34 @@ mkdir -p results
 echo "=== Starting original test ==="
 
 cd ../../
-nice -n -20 ./lencod.exe -f ./tests/pedestrian_area/encoder.cfg &> ./tests/pedestrian_area/results/encoder_original.res
+./lencod.exe -f ./tests/pedestrian_area/encoder.cfg &> ./tests/pedestrian_area/results/encoder_original.res
 
 
 echo "=== Starting 1/1 test ==="
 
-nice -n -20 ./lencod.exe -f ./tests/pedestrian_area/encoder_1_1.cfg &> ./tests/pedestrian_area/results/encoder_1_1.res
-nice -n -20 ./ldecod.exe -f ./tests/pedestrian_area/decoder.cfg
-nice -n -20 gst-launch-0.10 filesrc location=./tests/pedestrian_area/pedestrian_area_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesrc location=./tests/pedestrian_area/results/pedestrian_area_1_1.ogg
+./lencod.exe -f ./tests/pedestrian_area/encoder_1_1.cfg &> ./tests/pedestrian_area/results/encoder_1_1.res
+./ldecod.exe -f ./tests/pedestrian_area/decoder.cfg
+gst-launch-0.10 filesrc location=./tests/pedestrian_area/pedestrian_area_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/pedestrian_area/results/pedestrian_area_1_1.ogg
 
 
 echo "=== Starting 5/10 test ==="
 
-nice -n -20 ./lencod.exe -f ./tests/pedestrian_area/encoder_5_10.cfg &> ./tests/pedestrian_area/results/encoder_5_10.res
-nice -n -20 ./ldecod.exe -f ./tests/pedestrian_area/decoder.cfg 
-nice -n -20 gst-launch-0.10 filesrc location=./tests/pedestrian_area/pedestrian_area_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesrc location=./tests/pedestrian_area/results/pedestrian_area_5_10.ogg
+./lencod.exe -f ./tests/pedestrian_area/encoder_5_10.cfg &> ./tests/pedestrian_area/results/encoder_5_10.res
+./ldecod.exe -f ./tests/pedestrian_area/decoder.cfg 
+gst-launch-0.10 filesrc location=./tests/pedestrian_area/pedestrian_area_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/pedestrian_area/results/pedestrian_area_5_10.ogg
 
 
 echo "=== Starting 10/30 test ==="
 
-nice -n -20 ./lencod.exe -f ./tests/pedestrian_area/encoder_10_30.cfg &> ./tests/pedestrian_area/results/encoder_10_30.res
-nice -n -20 ./ldecod.exe -f ./tests/pedestrian_area/decoder.cfg 
-nice -n -20 gst-launch-0.10 filesrc location=./tests/pedestrian_area/pedestrian_area_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesrc location=./tests/pedestrian_area/results/pedestrian_area_10_30.ogg
+./lencod.exe -f ./tests/pedestrian_area/encoder_10_30.cfg &> ./tests/pedestrian_area/results/encoder_10_30.res
+./ldecod.exe -f ./tests/pedestrian_area/decoder.cfg 
+gst-launch-0.10 filesrc location=./tests/pedestrian_area/pedestrian_area_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/pedestrian_area/results/pedestrian_area_10_30.ogg
 
 
 echo "=== Starting 10/60 test ==="
 
-nice -n -20 ./lencod.exe -f ./tests/pedestrian_area/encoder_10_60.cfg &> ./tests/pedestrian_area/results/encoder_10_60.res
-nice -n -20 ./ldecod.exe -f ./tests/pedestrian_area/decoder.cfg 
-nice -n -20 gst-launch-0.10 filesrc location=./tests/pedestrian_area/pedestrian_area_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesrc location=./tests/pedestrian_area/results/pedestrian_area_10_60.ogg
+./lencod.exe -f ./tests/pedestrian_area/encoder_10_60.cfg &> ./tests/pedestrian_area/results/encoder_10_60.res
+./ldecod.exe -f ./tests/pedestrian_area/decoder.cfg 
+gst-launch-0.10 filesrc location=./tests/pedestrian_area/pedestrian_area_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/pedestrian_area/results/pedestrian_area_10_60.ogg
 
 echo "=== We are done ==="
