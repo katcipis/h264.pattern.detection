@@ -12,6 +12,7 @@
 #include <highgui.h>  /* for OpenCV functions like cvCvtColor */
 #include <glib.h>
 #include <stdio.h>
+#include <errno.h>
 
 
 static const int NUM_CHANNELS                = 3;
@@ -27,7 +28,7 @@ static void save_detected_objects(IplImage * image, CvSeq* results, const gchar*
 
   for (i = 0; i < results->total; i++) {
 
-    gchar * object_filename  = g_strdup_printf("%s/object_%d", objects_dir, saved_objects);
+    gchar * object_filename  = g_strdup_printf("%s/object_%d.jpg", objects_dir, saved_objects);
      
     saved_objects++;
     parameters[0] = CV_IMWRITE_JPEG_QUALITY;
@@ -46,10 +47,12 @@ static void save_detected_objects(IplImage * image, CvSeq* results, const gchar*
 
 static void create_detected_objects_directory(const gchar * directory_path)
 {
-  int ret = mkdir(directory_path, 1);
+  int ret = mkdir(directory_path, S_IRWXU | S_IRWXO);
 
-  if (ret == -1) {
-    printf("Erro criando diretorio[%s]\n", directory_path);
+  if (ret == -1 && errno != EEXIST) {
+
+    printf("Erro[%d] criando diretorio[%s].\n", errno, directory_path);
+    perror("Error.\n");
     exit(-1);
   }
 }
@@ -93,8 +96,9 @@ int main(int argc, char **argv)
   height    = atoi(argv[4]);
 
   input_video_file  = fopen(argv[2], "r");
-  found_objects_dir = g_strdup_printf("%s_found_objects", argv[2]);
+  found_objects_dir = g_strdup_printf("found_objects/%s", argv[2]);
 
+  create_detected_objects_directory("found_objects");
   create_detected_objects_directory(found_objects_dir);
 
   buffer           = g_slice_alloc(width * height);
