@@ -1,32 +1,21 @@
 #!/bin/bash
 
-file news_cif.y4m
-
-if test ! $? -eq 0; then
-  echo ""
+if test ! -f news_cif.y4m ; then
   echo "Downloading video News CIF"
-  echo ""
-
   wget http://media.xiph.org/video/derf/y4m/news_cif.y4m
 fi
 
-file crowd_run_1080p50.y4m
-
-if test ! $? -eq 0; then
+if test ! -f crowd_run_1080p50.y4m ; then
   echo "Downloading video Crowd 1080p"
   wget http://media.xiph.org/video/derf/y4m/crowd_run_1080p50.y4m
 fi
 
-file speed_bag_1080p.y4m
-
-if test ! $? -eq 0; then
+if test ! -f speed_bag_1080p.y4m ; then
   echo "Downloading video Speed bag 1080"
   wget http://media.xiph.org/video/derf/y4m/speed_bag_1080p.y4m
 fi
 
-file blue_sky_1080p25.y4m
-
-if test ! $? -eq 0; then
+if test ! -f blue_sky_1080p25.y4m ; then
   echo "Downloading video Blue Sky 1080"
   http://media.xiph.org/video/derf/y4m/blue_sky_1080p25.y4m
 fi
