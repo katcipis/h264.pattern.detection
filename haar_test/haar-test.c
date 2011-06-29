@@ -15,6 +15,8 @@
 #include <errno.h>
 
 
+#define FOUND_OBJECTS_BASE_DIR "found_objects"
+
 static const int NUM_CHANNELS                = 3;
 static const int MIN_OBJECT_WIDTH            = 30;
 static const int MIN_OBJECT_HEIGHT           = 30;
@@ -57,6 +59,29 @@ static void create_detected_objects_directory(const gchar * directory_path)
   }
 }
 
+gchar * get_found_objects_subfolder(const gchar * input_filename)
+{
+  gchar ** splitted = g_strsplit(input_filename, "/", -1);
+  gchar ** iter     = splitted;
+  gchar * ret       = NULL;
+
+  if (!iter) {
+    printf("Something went severelly wrong parsing filename[%s]!!!\n", input_filename);
+    exit(-1);
+  } 
+
+  /* We want the last part */
+  while (*(iter + 1)) {
+    iter++;
+  }
+
+  ret = g_strdup(*iter);
+
+  g_strfreev(splitted);
+
+  return ret;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -69,20 +94,21 @@ int main(int argc, char **argv)
   CvSize min_size;
  
   /* Test stuff */
-  gchar * buffer            = NULL;
-  gchar * found_objects_dir = NULL;
-  IplImage * image          = NULL;
-  IplImage * gray_image     = NULL;
-  GTimer * timer            = NULL;
-  FILE * input_video_file   = NULL;
-  int total_objects_found   = 0;  
-  int height                = 0;
-  int width                 = 0;
-  int image_size            = 0;
-  int total_images          = 0;
-  gdouble min_elapsed       = G_MAXDOUBLE;
-  gdouble max_elapsed       = 0;
-  gdouble total_elapsed     = 0;
+  gchar * buffer                  = NULL;
+  gchar * found_objects_dir       = NULL;
+  gchar * found_objects_subfolder = NULL;
+  IplImage * image                = NULL;
+  IplImage * gray_image           = NULL;
+  GTimer * timer                  = NULL;
+  FILE * input_video_file         = NULL;
+  int total_objects_found         = 0;  
+  int height                      = 0;
+  int width                       = 0;
+  int image_size                  = 0;
+  int total_images                = 0;
+  gdouble min_elapsed             = G_MAXDOUBLE;
+  gdouble max_elapsed             = 0;
+  gdouble total_elapsed           = 0;
   
 
   if (argc < 5) {
@@ -95,10 +121,11 @@ int main(int argc, char **argv)
   width     = atoi(argv[3]);
   height    = atoi(argv[4]);
 
-  input_video_file  = fopen(argv[2], "r");
-  found_objects_dir = g_strdup_printf("found_objects/%s", argv[2]);
+  input_video_file        = fopen(argv[2], "r");
+  found_objects_subfolder = get_found_objects_subfolder(argv[2]);
+  found_objects_dir       = g_strdup_printf(FOUND_OBJECTS_BASE_DIR"/%s", found_objects_subfolder);
 
-  create_detected_objects_directory("found_objects");
+  create_detected_objects_directory(FOUND_OBJECTS_BASE_DIR);
   create_detected_objects_directory(found_objects_dir);
 
   buffer           = g_slice_alloc(width * height);
@@ -187,6 +214,7 @@ int main(int argc, char **argv)
   cvClearMemStorage(storage);
   g_slice_free1(width * height, buffer); 
   g_free(found_objects_dir);
+  g_free(found_objects_subfolder);
   fclose(input_video_file);
 
   printf("\n\n====================================================================================================\n");

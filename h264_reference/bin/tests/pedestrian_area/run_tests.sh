@@ -1,16 +1,16 @@
 #!/bin/bash
 
 if test ! -f pedestrian_area.yuv ; then
+
   if test ! -f pedestrian_area_1080p25.y4m ; then
     wget http://media.xiph.org/video/derf/y4m/pedestrian_area_1080p25.y4m
   fi
+
+  echo "=== Generating YUV file ==="
+  gst-launch filesrc location=pedestrian_area_1080p25.y4m ! decodebin2 ! filesink location=pedestrian_area.yuv
+  rm pedestrian_area_1080p25.y4m
+
 fi
-
-echo "=== Generating YUV file ==="
-
-gst-launch filesrc location=pedestrian_area_1080p25.y4m ! decodebin2 ! filesink location=pedestrian_area.yuv
-rm pedestrian_area_1080p25.y4m
-
 
 echo "=== Creating directory to put results ==="
 mkdir -p results
