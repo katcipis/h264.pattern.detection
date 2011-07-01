@@ -28,99 +28,66 @@ mkdir -p results
 
 #Scaling tests
 
+width=0
+height=0
+
+run_scale_tests()
+{
+  eval "gst-launch filesrc location=./videos/crowd_run_1080p50.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! videoscale ! video/x-raw-yuv,width=$width,height=$height ! filesink location=./videos/crowd_run_$width_$height.yuv"
+
+  eval "gst-launch filesrc location=./videos/blue_sky_1080p25.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! videoscale ! video/x-raw-yuv,width=$width,height=$height ! filesink location=./videos/blue_sky_$width_$height.yuv"
+
+  eval "gst-launch filesrc location=./videos/speed_bag_1080p.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! videoscale ! video/x-raw-yuv,width=$width,height=$height ! filesink location=./videos/speed_bag_$width_$height.yuv"
+
+
+  eval "./haar-test haarcascade_frontalface_alt.xml ./videos/crowd_run_$width_$height.yuv $width $height &> results/crowd_run_$width_$height.result"
+  rm "./videos/crowd_run_$width_$height.yuv"
+
+  eval "./haar-test haarcascade_frontalface_alt.xml ./videos/blue_sky_$width_$height.yuv $width $height &> results/blue_sky_$width_$height.result"
+  rm "./videos/blue_sky_$width_$height.yuv"
+
+  eval "./haar-test haarcascade_frontalface_alt.xml ./videos/speed_bag_$width_$height.yuv $width $height &> results/speed_bag_$width_$height.yuv.result"
+  rm "./videos/speed_bag_$width_$height.yuv"
+}
+
 echo ""
 echo "Starting scaling tests"
 echo "Running 1080p tests"
 echo ""
 
-gst-launch  filesrc location=./videos/crowd_run_1080p50.y4m ! decodebin2 ! filesink location=./videos/crowd_run_1080p.yuv
+width=1920
+height=1080
 
-gst-launch  filesrc location=./videos/blue_sky_1080p25.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! filesink location=./videos/blue_sky_1080p.yuv
-
-gst-launch  filesrc location=./videos/speed_bag_1080p.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! filesink location=./videos/speed_bag_1080p.yuv
-
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/crowd_run_1080p.yuv 1920 1080 &> results/crowd_run_1080p.result
-rm ./videos/crowd_run_1080p.yuv
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/blue_sky_1080p.yuv 1920 1080 &> results/blue_sky_1080p.result
-rm ./videos/blue_sky_1080p.yuv
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/speed_bag_1080p.yuv 1920 1080 &> results/speed_bag_1080p.yuv.result
-rm ./videos/speed_bag_1080p.yuv
-
-
-echo ""
-echo "Running CIF tests"
-echo ""
-
-gst-launch -v filesrc location=./videos/news_cif.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! filesink location=./videos/news_cif.yuv
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/news_cif.yuv 352 288 &> results/news_cif.yuv.result
-rm ./videos/news_cif.yuv
+run_scale_tests
 
 
 echo ""
 echo "Running 720p Tests"
 echo ""
 
-gst-launch filesrc location=./videos/crowd_run_1080p50.y4m ! decodebin2 ! videoscale ! video/x-raw-yuv,width=1280,height=720 ! filesink location=./videos/crowd_run_720p.yuv
+width=1280
+height=720
 
-gst-launch filesrc location=./videos/blue_sky_1080p25.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! videoscale ! video/x-raw-yuv,width=1280,height=720 ! filesink location=./videos/blue_sky_720p.yuv
-
-gst-launch filesrc location=./videos/speed_bag_1080p.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! videoscale ! video/x-raw-yuv,width=1280,height=720 ! filesink location=./videos/speed_bag_720p.yuv
-
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/crowd_run_720p.yuv 1280 720 &> results/crowd_run_720p.result
-rm ./videos/crowd_run_720p.yuv
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/blue_sky_720p.yuv 1280 720 &> results/blue_sky_720p.result
-rm ./videos/blue_sky_720p.yuv
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/speed_bag_720p.yuv 1280 720 &> results/speed_bag_720p.yuv.result
-rm ./videos/speed_bag_720p.yuv
+run_scale_tests
 
 
 echo ""
 echo "Running 640 x 360 Tests"
 echo ""
 
-gst-launch filesrc location=./videos/crowd_run_1080p50.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! videoscale ! video/x-raw-yuv,width=640,height=360 ! filesink location=./videos/crowd_run_640_360.yuv
+width=640
+height=360
 
-gst-launch filesrc location=./videos/blue_sky_1080p25.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! videoscale ! video/x-raw-yuv,width=640,height=360 ! filesink location=./videos/blue_sky_640_360.yuv
-
-gst-launch filesrc location=./videos/speed_bag_1080p.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! videoscale ! video/x-raw-yuv,width=640,height=360 ! filesink location=./videos/speed_bag_640_360.yuv
-
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/crowd_run_640_360.yuv 640 360 &> results/crowd_run_640_360.result
-rm ./videos/crowd_run_640_360.yuv
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/blue_sky_640_360.yuv 640 360 &> results/blue_sky_640_360.result
-rm ./videos/blue_sky_640_360.yuv
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/speed_bag_640_360.yuv 640 360 &> results/speed_bag_640_360.yuv.result
-rm ./videos/speed_bag_640_360.yuv
-
+run_scale_tests
 
 echo ""
-echo "Generating 320 x 180 YUV 4:2:0 video"
+echo "Running 320 x 180 Tests"
 echo ""
 
-gst-launch  filesrc location=./videos/crowd_run_1080p50.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! videoscale ! video/x-raw-yuv,width=320,height=180 ! filesink location=./videos/crowd_run_320_180.yuv
+width=320
+height=180
 
-gst-launch filesrc location=./videos/blue_sky_1080p25.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! videoscale ! video/x-raw-yuv,width=320,height=180 ! filesink location=./videos/blue_sky_320_180.yuv
-
-gst-launch filesrc location=./videos/speed_bag_1080p.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! videoscale ! video/x-raw-yuv,width=320,height=180 ! filesink location=./videos/speed_bag_320_180.yuv
-
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/crowd_run_320_180.yuv 320 180 &> results/crowd_run_320_180.result
-rm ./videos/crowd_run_320_180.yuv
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/blue_sky_320_180.yuv 320 180 &> results/blue_sky_320_180.result
-rm ./videos/blue_sky_320_180.yuv
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/speed_bag_320_180.yuv 320 180 &> results/speed_bag_320_180.yuv.result
-rm ./videos/speed_bag_320_180.yuv
+run_scale_tests
 
 
 echo ""
@@ -128,57 +95,63 @@ echo "Starting bitrate tests"
 echo ""
 
 # bitrate tests
+
+bitrate=0
+
+run_bitrate_tests()
+{
+
+  eval "gst-launch filesrc location=./videos/crowd_run_1080p50.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! x264enc bitrate=$bitrate ! decodebin2 ! filesink location=./videos/crowd_run_1080p_bitrate_$bitrate.yuv"
+
+  eval "gst-launch  filesrc location=./videos/speed_bag_1080p.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! x264enc bitrate=$bitrate ! decodebin2 ! filesink location=./videos/speed_bag_1080p_bitrate_$bitrate.yuv"
+
+  eval "gst-launch  filesrc location=./videos/blue_sky_1080p25.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! x264enc bitrate=$bitrate ! decodebin2 ! filesink location=./videos/blue_sky_1080p_bitrate_$bitrate.yuv"
+
+
+  eval "./haar-test haarcascade_frontalface_alt.xml ./videos/crowd_run_1080p_bitrate_$bitrate.yuv 1920 1080 &> results/crowd_run_1080p_bitrate_$bitrate.result"
+  rm "./videos/crowd_run_1080p_bitrate_$bitrate.yuv"
+
+  eval "./haar-test haarcascade_frontalface_alt.xml ./videos/blue_sky_1080p_bitrate_$bitrate.yuv 1920 1080 &> results/blue_sky_1080p_bitrate_$bitrate.result"
+  rm "./videos/blue_sky_1080p_bitrate_$bitrate.yuv"
+
+  eval "./haar-test haarcascade_frontalface_alt.xml ./videos/speed_bag_1080p_bitrate_$bitrate.yuv 1920 1080 &> results/speed_bag_1080p_bitrate_$bitrate.yuv.result"
+  rm "./videos/speed_bag_1080p_bitrate_$bitrate.yuv"
+}
+
 echo ""
 echo "Running H.264 encoded bitrate=2048"
 echo ""
 
-gst-launch  filesrc location=./videos/crowd_run_1080p50.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! x264enc bitrate=2048 ! decodebin2 ! filesink location=./videos/crowd_run_1080p_bitrate_2048.yuv
-
-gst-launch  filesrc location=./videos/speed_bag_1080p.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! x264enc bitrate=2048 ! decodebin2 ! filesink location=./videos/speed_bag_1080p_bitrate_2048.yuv
-
-gst-launch  filesrc location=./videos/blue_sky_1080p25.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! x264enc bitrate=2048 ! decodebin2 ! filesink location=./videos/blue_sky_1080p_bitrate_2048.yuv
-
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/crowd_run_1080p_bitrate_2048.yuv 1920 1080 &> results/crowd_run_1080p_bitrate_2048.result
-rm ./videos/crowd_run_1080p_bitrate_2048.yuv
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/blue_sky_1080p_bitrate_2048.yuv 1920 1080 &> results/blue_sky_1080p_bitrate_2048.result
-rm ./videos/blue_sky_1080p_bitrate_2048.yuv
-
-./haar-test haarcascade_frontalface_alt.xml ./videos/speed_bag_1080p_bitrate_2048.yuv 1920 1080 &> results/speed_bag_1080p_bitrate_2048.yuv.result
-rm ./videos/speed_bag_1080p_bitrate_2048.yuv
-
+bitrate=2048
+run_bitrate_tests
 
 echo ""
 echo "Running H.264 encoded bitrate=1024"
 echo ""
 
-#gst-launch -v filesrc location=./videos/crowd_run_1080p50.y4m ! decodebin2 ! x264enc bitrate=1024 ! decodebin2 ! filesink location=./videos/crowd_run_1080p_bitrate_1024.yuv
-#gst-launch -v filesrc location=./videos/speed_bag_1080p.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! x264enc bitrate=1024 ! decodebin2 ! filesink location=./videos/speed_bag_1080p_bitrate_1024.yuv
+bitrate=1024
+run_bitrate_tests
 
 echo ""
 echo "Running H.264 encoded bitrate=512"
 echo ""
 
-#gst-launch -v filesrc location=./videos/news_cif.y4m ! decodebin2 ! x264enc bitrate=512 ! decodebin2 ! filesink location=./videos/news_cif_bitrate_512.yuv
-#gst-launch -v filesrc location=./videos/crowd_run_1080p50.y4m ! decodebin2 ! x264enc bitrate=512 ! decodebin2 ! filesink location=./videos/crowd_run_1080p_bitrate_512.yuv
-#gst-launch -v filesrc location=./videos/speed_bag_1080p.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! x264enc bitrate=512 ! decodebin2 ! filesink location=./videos/speed_bag_1080p_bitrate_512.yuv
+bitrate=512
+run_bitrate_tests
 
 echo ""
 echo "Running H.264 encoded bitrate=256"
 echo ""
 
-#gst-launch -v filesrc location=./videos/news_cif.y4m ! decodebin2 ! x264enc bitrate=256 ! decodebin2 ! filesink location=./videos/news_cif_bitrate_256.yuv
-#gst-launch -v filesrc location=./videos/crowd_run_1080p50.y4m ! decodebin2 ! x264enc bitrate=256 ! decodebin2 ! filesink location=./videos/crowd_run_1080p_bitrate_256.yuv
-#gst-launch -v filesrc location=./videos/speed_bag_1080p.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! x264enc bitrate=256 ! decodebin2 ! filesink location=./videos/speed_bag_1080p_bitrate_256.yuv
+bitrate=256
+run_bitrate_tests
 
 echo ""
 echo "Running H.264 encoded bitrate=128"
 echo ""
 
-#gst-launch -v filesrc location=./videos/news_cif.y4m ! decodebin2 ! x264enc bitrate=128 ! decodebin2 ! filesink location=./videos/news_cif_bitrate_128.yuv
-#gst-launch -v filesrc location=./videos/crowd_run_1080p50.y4m ! decodebin2 ! x264enc bitrate=128 ! decodebin2 ! filesink location=./videos/crowd_run_1080p_bitrate_128.yuv
-#gst-launch -v filesrc location=./videos/speed_bag_1080p.y4m ! decodebin2 ! ffmpegcolorspace ! video/x-raw-yuv,format=\(fourcc\)I420 ! x264enc bitrate=128 ! decodebin2 ! filesink location=./videos/speed_bag_1080p_bitrate_128.yuv
+bitrate=128
+run_bitrate_tests
 
 echo "=== Cleaning up YUV videos ==="
 rm *.yuv
