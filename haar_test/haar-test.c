@@ -217,11 +217,11 @@ int main(int argc, char **argv)
   g_free(found_objects_subfolder);
   fclose(input_video_file);
 
-  printf("\n\n====================================================================================================\n");
+  printf("\n\n==========================================================================================================\n");
   printf("Identified [%d] objects on a video with [%d] frames \n", total_objects_found, total_images);
   printf("Haar profiling (seconds): min elapsed[%f] max elapsed[%f] total elapsed[%f] mean elapsed[%f]\n", 
          min_elapsed, max_elapsed, total_elapsed, total_elapsed / total_images);
-  printf("========================================================================================================\n\n");
+  printf("==============================================================================================================\n\n");
 
   return 0;
 }
