@@ -19,34 +19,53 @@ mkdir -p results
 echo "=== Starting original test ==="
 
 cd ../../
+
 ./lencod.exe -f ./tests/speed_bag/encoder.cfg &> ./tests/speed_bag/results/encoder_original.res
+
+cp ./tests/speed_bag/speed_bag.h264 ./tests/speed_bag/results/speed_bag_original.h264
 
 
 echo "=== Starting 1/1 test ==="
 
 ./lencod.exe -f ./tests/speed_bag/encoder_1_1.cfg &> ./tests/speed_bag/results/encoder_1_1.res
+
+cp ./tests/speed_bag/speed_bag.h264 ./tests/speed_bag/results/speed_bag_1_1.h264
+
 ./ldecod.exe -f ./tests/speed_bag/decoder.cfg
+
 gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_1_1.ogg
 
 
 echo "=== Starting 5/10 test ==="
 
 ./lencod.exe -f ./tests/speed_bag/encoder_5_10.cfg &> ./tests/speed_bag/results/encoder_5_10.res
+
+cp ./tests/speed_bag/speed_bag.h264 ./tests/speed_bag/results/speed_bag_5_10.h264
+
 ./ldecod.exe -f ./tests/speed_bag/decoder.cfg 
+
 gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_5_10.ogg
 
 
 echo "=== Starting 10/30 test ==="
 
 ./lencod.exe -f ./tests/speed_bag/encoder_10_30.cfg &> ./tests/speed_bag/results/encoder_10_30.res
+
+cp ./tests/speed_bag/speed_bag.h264 ./tests/speed_bag/results/speed_bag_10_30.h264
+
 ./ldecod.exe -f ./tests/speed_bag/decoder.cfg 
+
 gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_10_30.ogg
 
 
 echo "=== Starting 10/60 test ==="
 
 ./lencod.exe -f ./tests/speed_bag/encoder_10_60.cfg &> ./tests/speed_bag/results/encoder_10_60.res
+
+cp ./tests/speed_bag/speed_bag.h264 ./tests/speed_bag/results/speed_bag_10_60.h264
+
 ./ldecod.exe -f ./tests/speed_bag/decoder.cfg 
+
 gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_10_60.ogg
 
 echo "=== We are done ==="
