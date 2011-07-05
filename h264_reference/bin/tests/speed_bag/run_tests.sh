@@ -33,7 +33,7 @@ cp ./tests/speed_bag/speed_bag.h264 ./tests/speed_bag/results/speed_bag_1_1.h264
 
 ./ldecod.exe -f ./tests/speed_bag/decoder.cfg
 
-gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_1_1.ogg
+gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=30000/1001 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_1_1.ogg
 
 
 echo "=== Starting 5/10 test ==="
@@ -44,7 +44,7 @@ cp ./tests/speed_bag/speed_bag.h264 ./tests/speed_bag/results/speed_bag_5_10.h26
 
 ./ldecod.exe -f ./tests/speed_bag/decoder.cfg 
 
-gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_5_10.ogg
+gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=30000/1001 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_5_10.ogg
 
 
 echo "=== Starting 10/30 test ==="
@@ -55,7 +55,7 @@ cp ./tests/speed_bag/speed_bag.h264 ./tests/speed_bag/results/speed_bag_10_30.h2
 
 ./ldecod.exe -f ./tests/speed_bag/decoder.cfg 
 
-gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_10_30.ogg
+gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=30000/1001 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_10_30.ogg
 
 
 echo "=== Starting 10/60 test ==="
@@ -66,6 +66,6 @@ cp ./tests/speed_bag/speed_bag.h264 ./tests/speed_bag/results/speed_bag_10_60.h2
 
 ./ldecod.exe -f ./tests/speed_bag/decoder.cfg 
 
-gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=25/1 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_10_60.ogg
+gst-launch-0.10 filesrc location=./tests/speed_bag/speed_bag_dec.yuv ! videoparse format=1 width=1920 height=1080 framerate=30000/1001 ! ffmpegcolorspace ! theoraenc ! oggmux ! filesink location=./tests/speed_bag/results/speed_bag_10_60.ogg
 
 echo "=== We are done ==="
