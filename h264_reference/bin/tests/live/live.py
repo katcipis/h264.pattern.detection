@@ -62,6 +62,10 @@ def gst_bus_handler (bus, message):
             err, debug = message.parse_warning()
             print("Warning: {0}".format(debug))
 
+	elif message.type == gst.MESSAGE_EOS:
+            print("Stopping pipeline !!!")
+	    gtk.quit()
+
         else:
             print("Message type {0}".format(message.type))
 
@@ -75,18 +79,18 @@ def build_receive_pipeline(frames_to_encode, frame_rate, width, height):
         bus.enable_sync_message_emission()
         bus.connect("message", gst_bus_handler)
 
-        src   = gst.element_factory_make("videotestsrc", "src")
+        src   = gst.element_factory_make("v4l2src", "src")
         colorspace = gst.element_factory_make("ffmpegcolorspace", "colorspace")
         videoscale = gst.element_factory_make("videoscale", "video-scale")
         videorate  = gst.element_factory_make("videorate", "video-rate")
         caps       = gst.element_factory_make("capsfilter", "video-caps")
         queue = gst.element_factory_make("queue", "buffer")
-        sink  = gst.element_factory_make("shmsink", "shared-mem-sink")
+        sink  = gst.element_factory_make("filesink", "file-sink")
 	video_caps = "video/x-raw-yuv,format=\(fourcc\)I420,width={width},height={height},framerate={framerate}".format (width = width, 
                                                                                                                          height = height, 
                                                                                                                          framerate = frame_rate)
-        sink.set_property ("socket-path", _INPUT_FILE)
-	sink.set_property ("wait-for-connection", False)
+        sink.set_property ("location", _INPUT_FILE)
+        sink.set_property ("num-buffers", frames_to_encode)
 	caps.set_property("caps", gst.caps_from_string(video_caps))
         
         pipeline.add (src, colorspace, videoscale, videorate, caps, queue, sink)
@@ -100,12 +104,8 @@ generate_encoder_configuration (*get_options())
 capture_pipeline = build_receive_pipeline(*get_options())
 capture_pipeline.set_state (gst.STATE_PLAYING)
 
-time.sleep (10)
-while (not os.path.isfile(_ENCODER_FILE)):
-	#lets wait to gstreamer build the pipe
-	time.sleep (1)
-
-subprocess.Popen ("../../lencod.exe -f " + _ENCODER_FILE, shell=True)
-
 gtk.gdk.threads_init()
 gtk.main()
+
+subprocess.call ("../../lencod.exe -f " + _ENCODER_FILE, shell=True)
+
