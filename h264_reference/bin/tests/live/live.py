@@ -1,6 +1,6 @@
 import gobject, pygtk, gtk, pygst, sys
 pygst.require("0.10")
-import os, gst, glib
+import os, gst, glib, subprocess, time
 
 
 _ENCODER_TEMPLATE_FILE = "encoder.cfg.template"
@@ -86,8 +86,9 @@ def build_receive_pipeline(frames_to_encode, frame_rate, width, height):
                                                                                                                          height = height, 
                                                                                                                          framerate = frame_rate)
         sink.set_property ("socket-path", _INPUT_FILE)
+	sink.set_property ("wait-for-connection", False)
 	caps.set_property("caps", gst.caps_from_string(video_caps))
-
+        
         pipeline.add (src, colorspace, videoscale, videorate, caps, queue, sink)
 	gst.element_link_many(src, queue, sink)
 	
@@ -98,6 +99,13 @@ generate_encoder_configuration (*get_options())
 
 capture_pipeline = build_receive_pipeline(*get_options())
 capture_pipeline.set_state (gst.STATE_PLAYING)
+
+time.sleep (10)
+while (not os.path.isfile(_ENCODER_FILE)):
+	#lets wait to gstreamer build the pipe
+	time.sleep (1)
+
+subprocess.Popen ("../../lencod.exe -f " + _ENCODER_FILE, shell=True)
 
 gtk.gdk.threads_init()
 gtk.main()
