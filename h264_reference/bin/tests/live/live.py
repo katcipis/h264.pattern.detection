@@ -138,7 +138,6 @@ capture_pipeline.set_state (gst.STATE_PLAYING)
 gtk.gdk.threads_init()
 gtk.main()
 
-'''
 capture_pipeline.set_state (gst.STATE_NULL)
 
 subprocess.call ("../../lencod.exe -f " + _ENCODER_FILE, shell=True)
@@ -149,4 +148,4 @@ play_pipeline.set_state (gst.STATE_PLAYING)
 
 gtk.main()
 
-play_pipeline.set_state (gst.STATE_NULL)'''
+play_pipeline.set_state (gst.STATE_NULL)
