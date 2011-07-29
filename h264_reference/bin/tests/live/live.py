@@ -6,7 +6,8 @@ import os, gst, glib, subprocess, time
 _ENCODER_TEMPLATE_FILE = "encoder.cfg.template"
 _ENCODER_FILE = os.path.join (os.getcwd(), "encoder.cfg")
 _DECODER_FILE = os.path.join (os.getcwd(), "decoder.cfg")
-_INPUT_FILE = "/tmp/live_named_pipe"
+_INPUT_FILE = "/tmp/recorded"
+_DECODED_FILE = "live_dec.yuv"
 
 _OBJECT_DETECTION_ENABLE        = 1
 _OBJECT_DETECTION_MIN_HEIGHT    = 30
@@ -80,7 +81,7 @@ def build_capture_pipeline(frames_to_encode, frame_rate, width, height):
         bus.enable_sync_message_emission()
         bus.connect("message", gst_bus_handler)
 
-        src   = gst.element_factory_make("v4l2src", "src")
+        src   = gst.element_factory_make("autovideosrc", "src")
         colorspace = gst.element_factory_make("ffmpegcolorspace", "colorspace")
         videoscale = gst.element_factory_make("videoscale", "video-scale")
         videorate  = gst.element_factory_make("videorate", "video-rate")
@@ -120,9 +121,9 @@ def build_playback_pipeline(frames_to_encode, frame_rate, width, height):
         src.set_property ("num-buffers", int(frames_to_encode))
 
 	videoparse.set_property("format", 1)
-	videoparse.set_property("width", width)
-	videoparse.set_property("height", height)
-	videoparse.set_property("framerate", frame_rate)
+	videoparse.set_property("width", int(width))
+	videoparse.set_property("height", int(height))
+	videoparse.set_property("framerate", int(frame_rate))
         
         pipeline.add (src, videoparse, colorspace, videoscale, videorate, queue, sink)
 	gst.element_link_many(src, videoparse, colorspace, videoscale, videorate, queue, sink)
@@ -143,7 +144,7 @@ capture_pipeline.set_state (gst.STATE_NULL)
 subprocess.call ("../../lencod.exe -f " + _ENCODER_FILE, shell=True)
 subprocess.call ("../../ldecod.exe -f " + _DECODER_FILE, shell=True)
 
-play_pipeline = build_capture_pipeline(*get_options())
+play_pipeline = build_playback_pipeline(*get_options())
 play_pipeline.set_state (gst.STATE_PLAYING)
 
 gtk.main()
