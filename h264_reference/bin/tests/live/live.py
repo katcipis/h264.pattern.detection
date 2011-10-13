@@ -3,18 +3,18 @@ pygst.require("0.10")
 import os, gst, glib, subprocess, time
 
 
-_ENCODER_TEMPLATE_FILE = "encoder.cfg.template"
+_ENCODER_TEMPLATE_FILE = os.path.join (os.getcwd(), "encoder.cfg.template")
 _ENCODER_FILE = os.path.join (os.getcwd(), "encoder.cfg")
 _DECODER_FILE = os.path.join (os.getcwd(), "decoder.cfg")
-_INPUT_FILE = "/tmp/recorded"
-_DECODED_FILE = "live_dec.yuv"
+_INPUT_FILE = "/tmp/live-recorded.yuv"
+_DECODED_FILE = "/tmp/live-recorded-decoded.yuv"
 
 _OBJECT_DETECTION_ENABLE        = 1
 _OBJECT_DETECTION_MIN_HEIGHT    = 30
 _OBJECT_DETECTION_MIN_WIDTH     = 30
 _OBJECT_DETECTION_SEARCH_HYST   = 10
 _OBJECT_DETECTION_TRACKING_HYST = 30
-_OBJECT_DETECTION_TRAINING_FILE = os.path.join (os.getcwd(), "../../haarcascade_frontalface_alt.xml")
+_OBJECT_DETECTION_TRAINING_FILE = os.path.join (os.getcwd(), "..", "..", "haarcascade_frontalface_alt.xml")
 
 
 def get_options ():
@@ -81,7 +81,7 @@ def build_capture_pipeline(frames_to_encode, frame_rate, width, height):
         bus.enable_sync_message_emission()
         bus.connect("message", gst_bus_handler)
 
-        src   = gst.element_factory_make("autovideosrc", "src")
+        src   = gst.element_factory_make("v4l2src", "src")
         colorspace = gst.element_factory_make("ffmpegcolorspace", "colorspace")
         videoscale = gst.element_factory_make("videoscale", "video-scale")
         videorate  = gst.element_factory_make("videorate", "video-rate")
@@ -110,7 +110,7 @@ def build_playback_pipeline(frames_to_encode, frame_rate, width, height):
         bus.connect("message", gst_bus_handler)
 
         src   = gst.element_factory_make("filesrc", "src")
-        videoparse = gst.element_factory_make("videoparse", "colorspace")
+        videoparse = gst.element_factory_make("videoparse", "videoparse")
         colorspace = gst.element_factory_make("ffmpegcolorspace", "colorspace")
         videoscale = gst.element_factory_make("videoscale", "video-scale")
         videorate  = gst.element_factory_make("videorate", "video-rate")
@@ -123,7 +123,7 @@ def build_playback_pipeline(frames_to_encode, frame_rate, width, height):
 	videoparse.set_property("format", 1)
 	videoparse.set_property("width", int(width))
 	videoparse.set_property("height", int(height))
-	videoparse.set_property("framerate", int(frame_rate))
+	videoparse.set_property("framerate", gst.Fraction(int(frame_rate), 1))
         
         pipeline.add (src, videoparse, colorspace, videoscale, videorate, queue, sink)
 	gst.element_link_many(src, videoparse, colorspace, videoscale, videorate, queue, sink)
