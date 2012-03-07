@@ -1,0 +1,42 @@
+\chapter{Introdução}
+
+Atualmente tem se tornado comum, em soluções de segurança, o uso de detecção de padrões como detecção facial, detecção de objetos específicos, cercas virtuais, alarmes, etc. Dispositivos de gravação de vídeo em alta definição estão se tornando cada vez mais acessíveis, estando presentes até mesmo em celulares, porém como é inviável dispor de longos trechos de vídeo em alta resolução sem compactação pois estes consomem um grande espaço de armazenamento e não é possível transmiti-los em larga escala com os meios de comunicação existentes, esses vídeos em alta definição são usualmente compactados.
+
+A maior parte dos algoritmos de identificação de objetos e algoritmos biométricos trabalham com informações não codificadas, nesse caso, o processamento de múltiplos vídeos exigiria que esses vídeos fossem decodificados primeiro e então processados. Alguns algoritmos de identificação de objetos trabalham com informações codificadas, um exemplo é o detector de faces proposto em \cite{faceDetectionH264}, mas na conclusão do mesmo é possível se observar que apesar do resultado ser satisfatório, o processamento em um identificador de objetos utilizando informações brutas foi superior (no caso a comparação foi realizada com o classificador Haar do OpenCV).
+
+Considerando que a busca por objetos de interesse fosse realizada no vídeo compactado (não sendo necessário decodificar o vídeo), em um caso de uso como o de um aeroporto onde existem muitas câmeras de segurança, ainda seria necessário um grande poder computacional para realizar a busca de objetos de interesse em todos vídeos ao mesmo tempo, já que normalmente se espera que um sistema de segurança tenha um tempo de resposta rápido. 
+
+Dessa maneira é interessante obter a maior quantidade possível de metadados a respeito de objetos de interesse, na fonte do vídeo, de maneira integrada ao processo de codificação, reaproveitando ao máximo qualquer informação que o processo de codificação possa fornecer. Ao invés de analisar os vídeos, será realizada uma análise dos metadados. Se um vídeo muito longo não possui nenhum metadado, não será necessário analisá-lo. Como metadados pode-se citar a presença de um objeto de interesse (sua posição e tamanho), padrões de movimento (útil em cercas virtuais) ou o objeto de interesse em alta resolução não compactado (facilita o processamento posterior desse objeto em um algoritmo biométrico).
+
+Ao utilizar ao máximo as informações que o próprio codificador gera para realizar a identificação de padrões é interessante transportar os metadados gerados dentro do próprio bitstream do vídeo, isso facilita o desenvolvimento de um chip codificador na solução, pois não é necessário que os metadados encontrados sejam enviados a aplicação para serem transportados de outra maneira.
+
+No presente trabalho será realizado um estudo da integração de um algoritmo de detecção de padrões com as informações de estimativa de movimento calculadas pelo codificador MPEG 4 parte 10, gerando um \textit{tracker} de objetos, capaz de enviar também objetos de interesse não compactados.
+
+\section{Objetivos}
+
+\subsection{Objetivo geral}
+
+Desenvolver um codificador H.264 capaz de detectar e realizar o \textit{tracking} de objetos, utilizando informações de estimativa de movimento calculadas pelo codificador, e inserir essas informações como metadados no próprio bitstream de vídeo.
+
+\subsection{Objetivos específicos}
+
+\begin{itemize}
+        \item Detectar e enviar objetos de interesse não comprimidos na forma de metadados, úteis para um pós-processamento. 
+	\item Realizar o \textit{tracking} de objetos de interesse durante o processo de codificação do vídeo, utilizando informações de estimativa de movimento calculadas pelo próprio codificador para auxiliar o \textit{tracking}.
+	\item Inserir os metadados obtidos no processo de codificação diretamente no bitstream do vídeo H.264 sem alterar o vídeo e a conformidade dele com o padrão. 
+	\item Recuperar os metadados no processo de decodificação e apresentá-los de forma útil.
+\end{itemize}
+
+
+\section{Estrutura do trabalho}
+
+
+Os capítulos que seguem estão organizados da seguinte maneira. No capítulo 2 apresenta-se a fundamentação teórica do trabalho, sendo dividida em 3 seções principais. A seção 2.1 traz uma visão dos conceitos gerais de vídeo digital, da necessidade de compressão do mesmo e de compressão de vídeo em geral. A seção 2.2 traz conceitos gerais a respeito de codificação de vídeo. A seção 2.3, realiza um estudo do padrão de compressão de vídeo MPEG-4 parte 10, focando na inserção de metadados no bitstream. A seção 2. traz detalhes da sintaxe do MPEG-4 parte 10, focando na sintaxe de um SEI NALU. Na seção 2.4 é descrito em detalhes o algoritmo de detecção de objetos utilizado no trabalho. 
+
+O capítulo 3 descreve o desenvolvimento prático do trabalho, sendo dividido em 6 seções. A seção 3.1 fala sobre o uso prático das mensagens SEI \textit{Unregistered Userdata} no software de referência, incluindo testes de inserção e recuperação das mensagens no bitstream. A seção 3.2 fala a respeito do módulo \textit{extracted\_metadata}, onde são definidos os tipos de metadados utilizados ao longo do trabalho e como eles são serializados e desserializados. 
+
+A seção 3.3 explica o módulo \textit{metadata\_extractor}, onde é realizada tanto a detecção como o  \textit{tracking} de objetos. A seção 3.4 explica em detalhes as alterações realizadas no codificar de referência para integrar o codificador com os módulos \textit{extracted\_metadata} e \textit{metadata\_extractor}. A seção 3.5 detalha as alterações realizadas no decodificador de referência para realizar a apresentação dos metadados inseridos no bitstream. 
+
+O capítulo 4 descreve e apresenta os resultados dos testes realizados no sistema proposto.
+
+O capítulo 5 faz as considerações finais e conclui o trabalho.

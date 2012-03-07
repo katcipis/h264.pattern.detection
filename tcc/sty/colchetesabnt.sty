@@ -1,0 +1,23 @@
+\citebrackets{[}{]}
+\makeatletter
+\ifthenelse{\boolean{ABCIbiblabelonmargin}}
+{
+  \renewcommand{\@biblabel}[1]%
+  {\ifthenelse{\equal{#1}{}}{}{{\citenumstyle [#1]\hspace{\biblabelsep}}}}
+}
+{
+  \renewcommand{\@biblabel}[1]%
+  {%
+    \ifthenelse{\equal{#1}{}}
+    {}
+    {%
+      \def\biblabeltext{{\citenumstyle [#1]\hspace{\biblabelsep}}}%
+      \settowidth{\ABCIauxlen}{\biblabeltext}%
+      \ifthenelse{\lengthtest{\ABCIauxlen<\minimumbiblabelwidth}}
+      {\setlength{\ABCIauxlen}{\minimumbiblabelwidth-\ABCIauxlen}}
+      {\setlength{\ABCIauxlen}{0cm}}%
+      {\biblabeltext\hspace{\ABCIauxlen}}%   
+    }%
+  }%
+}
+\makeatother

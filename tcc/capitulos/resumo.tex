@@ -1,0 +1,7 @@
+\begin{resumo}
+        
+Para realizar o armazenamento e transmissão de vídeo tem se utilizado cada vez mais codificadores, dentre esses codificadores se destaca o MPEG 4 parte 10, também conhecido como H.264. Este trabalho integra um classificador Haar ao codificador de referência do padrão MPEG 4 parte 10 para realizar a detecção de objetos e explora o algoritmo de estimativa de movimento do codificador para realizar o \textit{tracking} do objeto. Os objetos detectados e as informações de tracking são representados na forma de metadados e são transportados no bitstream do vídeo utilizando mensagens \textit{Supplemental Enhancement Information}.
+
+No decodificador de referência esses metadados são recuperados e apresentados de forma satisfatória a fim de realizar a constatação do bom funcionamento da implementação de detecção de objetos no codificador. Os testes realizados mostram que o codificador gerou vídeos em conformidade com o padrão  MPEG 4 parte 10, junto com um desempenho computacional satisfatório. Os resultados obtidos no decodificador, ao recuperar os metadados e apresentá-los, também foram satisfatórios mostrando a viabilidade de construir um sistema de \textit{tracking} de objetos embutido no codificador.
+
+\end{resumo}

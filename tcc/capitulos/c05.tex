@@ -1,0 +1,30 @@
+\chapter{ Conclusões }
+
+Para desenvolver o projeto foi escolhido o software de referência para o padrão de compressão de vídeo MPEG 4 parte 10. Dois tipos de metadados foram desenvolvidos ao longo do trabalho, um representa a caixa delimitadora de um objeto de interesse, o outro é o plano luma bruto de um objeto de interesse. 
+
+Testes realizados tanto com o decodificador de referência como com o Gstreamer mostraram que o uso de mensagens \textit{Supplemental Enhancement Information} do tipo \textit{Unregistered Userdata} para transportar os metadados diretamente no \textit{bitstream} do vídeo não alteraram a conformidade do mesmo com o padrão, sendo possível exibir um vídeo com metadados embutidos em qualquer decodificador MPEG 4 parte 10. 
+
+Apesar do padrão MPEG 4 parte 10 não definir um tamanho máximo para mensagens \textit{Supplemental Enhancement Information} do tipo \textit{Unregistered Userdata}, pode existir um limite implícito no tamanho máximo de um NALU (de acordo com o nível/perfil implementado), o que refletiria em um tamanho máximo para as mensagens. 
+
+Para facilitar a detecção de objetos foi utilizado um algoritmo de detecção de padrões em imagens estáticas, o classificador Haar, implementado na biblioteca de visão computacional OpenCV. Executar o classificador Haar em todos os quadros do vídeo mostrou um aumento considerável no custo computacional do codificador. 
+
+Utilizou-se informações de estimativa de movimento calculadas pelo codificador para estimar o movimento do objeto, evitando a necessidade de executar o classificador Haar em todos os quadros do vídeo, dessa maneira constatou-se uma significativa redução do custo computacional reutilizando informações geradas pelo processo de codificação. Com as alterações realizadas no decodificador de referência foi possível recuperar os metadados. Os metadados representando a caixa delimitadora de um objeto detectado, são desenhados no quadro, facilitando a constatação visual do funcionamento do sistema.  
+
+Como toda a extração do metadado e inserção dele dentro do \textit{bitstream} é feita internamente no codificador isso facilita a construção de um chip codificador H.264 que realize \textit{tracking} de objetos, esse chip codificador poderia ter grande parte do classificador Haar acelerado também em hardware, dentro do chip. Como pode ser visto em \cite{haarFPGA}, obtêm-se um grande aumento no desempenho da detecção de objetos ao se implementar o classificador Haar em FPGA. 
+
+Este trabalhou mostrou a viabilidade de se utilizar a estimativa de movimento gerada pelo codificador para auxiliar o \textit{tracking} de objetos e do envio dessas informações através do \textit{bitstream} do vídeo. Além das informações de \textit{tracking} foi possível enviar o objeto detectado não compactado como metadado, o que pode ser útil em algoritmos de identificação biométrica. No momento da análise dos vídeos é necessário analisar apenas os metadados que estão inseridos no \textit{bitstream}, grande parte do processamento já foi realizado durante o processo de codificação. 
+
+
+\section{Trabalhos futuros}
+
+Como possíveis trabalhos futuros, cita-se: 
+
+\begin{itemize}
+        \item Fazer um melhor uso das informações geradas pelo processo de codificação para gerar heurísticas mais inteligentes. Um exemplo seria utilizar histereses dinâmicas, quando existe muito movimento no vídeo as histereses diminuem, mas quando não existe movimento as histereses aumentam.
+        \item Estender o sistema para realizar a detecção e \textit{tracking} de múltiplos objetos (com mesma forma) simultaneamente.
+        \item Buscar no classificador Haar cálculos que já possam ter sido feitos pelo codificador, melhorando a integração dos dois.
+        \item Utilizar outro algoritmo de detecção de padrões que tenha uma maior interseção com os algoritmos presentes no codificador.
+        \item Utilizar apenas as informações de estimativa de movimento para a construção de cercas virtuais ou alarmes que não se importem com a forma do objeto mas com padrões de movimento suspeitos.
+        \item Desenvolver um chip codificador H.264 integrado ao classificador Haar integrado no chip, realizando a detecção e \textit{tracking} de objetos em tempo real. Cita-se \cite{haarFPGA} como exemplo de um classificador Haar acelerado em hardware.
+\end{itemize}
+  

@@ -1,0 +1,10 @@
+
+Detalhas desempenho, qualidade e tamanho que ficou o vídeo codificado.
+
+- Sem Haar
+
+
+- Com Haar sem histerese
+
+
+- Com Haar e histerese de busca 10 frames, histerese de tracking 30 frames.

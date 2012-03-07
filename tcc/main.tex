@@ -1,0 +1,82 @@
+\documentclass[12pt, a4paper, times, capchap, capsec, floatnumber=continuous, header=yes]{abnt}
+\usepackage[utf8]{inputenc} % acentos em portugues
+\usepackage{graphicx} % importar imagens
+\usepackage{sty/abnt-UFSC}
+\usepackage{longtable,color}
+\usepackage{amsmath}
+\usepackage{amstext}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{hyphenat}
+\usepackage{url}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{textcomp}
+
+\lstset{language=C,
+numbers=left,
+stepnumber=1,
+firstnumber=1,
+numberstyle=\tiny,
+extendedchars=true,
+breaklines=true,
+frame=tb,
+basicstyle=\footnotesize,
+stringstyle=\ttfamily,
+showstringspaces=false
+}
+\renewcommand{\lstlistingname}{C\'{o}digo Fonte}
+\renewcommand{\lstlistlistingname}{Lista de C\'{o}digos Fonte}
+
+\def\Versao$#1 #2${#2}
+\def\Data$#1 #2 #3${#2}
+
+\autor{Tiago César Katcipis}
+\titulo{Inserção de metadados referentes a detecção de padrões no H.264}
+\orientador[]{Orientador: Antônio Augusto Fröhlich }
+\coorientador[]{Coorientador: Paulo Jorge Câmara Pizarro}
+\comentario{Trabalho de Conclusão de Curso submetido ao Programa de graduação da Universidade Federal de Santa Catarina para a obtenção do Grau de Bacharel em Ciências da Computação.}
+\instituicao{Universidade Federal de Santa Catarina \par
+    Centro Tecnológico \par
+    Departamento de Informática e Estatística}
+\local{Florian\'{o}polis}
+\data{15 de Julho de 2011}
+
+
+\begin{document}
+
+\capa
+\folhaderosto
+
+\input{capitulos/agradecimentos}
+\input{capitulos/resumo}
+\input{capitulos/abstract}
+
+\listoffigures
+\listoftables
+\input{capitulos/lista_siglas}
+
+\sumario
+
+\setcounter{page}{1}
+
+\input{capitulos/c01}
+\input{capitulos/c02}
+\input{capitulos/c03}
+\input{capitulos/c04}
+\input{capitulos/c05}
+
+\bibliography{ref}
+
+\input{capitulos/apendice_a}
+\input{capitulos/apendice_b}
+\input{capitulos/apendice_c}
+
+\input{capitulos/anexo_a}
+\input{capitulos/anexo_b}
+\input{capitulos/anexo_c}
+\input{capitulos/anexo_d}
+
+\end{document}

@@ -1,0 +1,339 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sty/abnt-UFSC}
+\RequirePackage[paginas=sim,ordem=alf,esquema=misto,caixa=mista,lista=unica]{tabela-simbolos} %tabela de siglas em ordem %alfab\'{e}tica
+\RequirePackage{supertabular} % pacote necess\'{a}rio para quebrar tabela de s\'{i}mbolos em p\'{a}ginas
+\RequirePackage{listings} %pacote para algoritmos
+\RequirePackage{remreset} % remover reset na contagem (chapter)
+\RequirePackage[num]{abntcite} % cita\c{c}\~{o}es na forma alf
+\RequirePackage{abnt-num} %abnt na forma alfa (como as normas abnt)
+\RequirePackage{url}
+\RequirePackage[brazil]{babel}
+\PassOptionsToPackage{paginas=nao,esquema=misto,caixa=mista,lista=unica,ordem=alf}{tabela-simbolos} %formata a lista de % s\'{i}mbolos
+\usepackage{sty/colchetesabnt}
+\bibliographystyle{abnt-num} % estilo da bibliografia
+
+
+\makeatletter %Para que entenda o @
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% D O C U M E N T O %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\AtBeginDocument{
+%renewcommand do ap\^{e}ndice tem que ser dentro do begin{document}
+\renewcommand{\appendixname}{AP\^ENDICE}
+}
+
+
+%%%%%%%%%%%%%%%%%
+%%%% C A P A %%%%
+%%%%%%%%%%%%%%%%%
+%deixa os autores em mai\'{u}sculo
+
+\renewcommand{\autor}[1]{\renewcommand{\ABNTautordata}{\uppercase{#1}}\oldauthor{\uppercase{#1}}}
+%deixa o t\'{i}tulo em mai\'{u}sculo
+\let \oldtitulo=\titulo
+\renewcommand{\titulo}[1]{\oldtitulo{\uppercase{#1}}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% F O L H A D E R O S T O %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% (as altera\c{c}\~{o}es necess\'{a}rias j\'{a} foram feitas na CAPA)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% F O L H A D E A P R O V A C A O %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setlength{\ABNTsignthickness}{0.4pt} %adiciona uma linha para assinar, e altera o tamanho dessa linha
+\setlength{\ABNTsignskip}{2.5cm} %espa\c{c}o entre o texto anterior e alinha de assinatura
+%\setlength{\ABNTsignwidth}{20cm} % altera o espa\c{c}o horizontal entre os nome
+
+
+%%%%%%%%%%%%%%%%%%%%%
+%%%% R E S U M O %%%%
+%%%%%%%%%%%%%%%%%%%%%
+%tira a identa\c{c}\~{a}o da primeira linha (par\'{a}grafo)
+\renewenvironment{resumo}%
+{%
+\if@openright\cleardoublepage\else\clearpage\fi%
+\setchaptertype{resumo}
+\pretextualchapter{\resumoname}%
+\begin{espacosimples}%
+\setlength{\parindent}{0cm}
+}%
+{
+\setlength{\parindent}{.7cm}
+\end{espacosimples}\newpage
+}%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% A B S T R A C T %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%
+%tira a identa\c{c}\~{a}o da primeira linha (par\'{a}grafo)
+\renewenvironment{abstract}%
+{%
+\if@openright\cleardoublepage\else\clearpage\fi%
+\setchaptertype{abstract}
+\pretextualchapter{\ABNTabstractname}%
+\begin{espacosimples}%
+\setlength{\parindent}{0cm}
+}%
+{
+\setlength{\parindent}{0.7cm}
+\end{espacosimples}\newpage
+}%abstract
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%%%% S U M \'{A} R I O %%%%
+%%%%%%%%%%%%%%%%%%%%%%%
+
+% Altera o espa\c{c}amento entre os dots
+\renewcommand\@dotsep{1.5}
+
+% Altera a montagem do sum\'{a}rio (sem identa\c{c}\~{a}o)
+\renewcommand\l@chapter[2]{
+	\ifnum \c@tocdepth >\m@ne
+	\addpenalty{-\@highpenalty} %
+	\vskip 1.0em \@plus\p@
+	\setlength\@tempdima{1.5em} %
+	\begingroup %{}
+	\ifthenelse{\boolean{ABNTpagenumstyle}}
+		{\renewcommand{\@pnumwidth}{1.4em}}
+		{}
+	\parindent \z@ \rightskip \@pnumwidth
+	\parfillskip -\@pnumwidth
+	\leavevmode \normalsize\ABNTtocchapterfont
+	\advance\leftskip\@tempdima
+	\hskip -\leftskip
+	#1\nobreak\dotfill \nobreak%
+	\ifthenelse{\boolean{ABNTpagenumstyle}}
+		{%
+			\hb@xt@\@pnumwidth{\hss
+				\ifthenelse{\not\equal{#2}{}}{{\normalfont \thinspace#2}}{}}\par
+		}
+		{%
+			\hb@xt@\@pnumwidth{\hss #2}\par
+		}
+	\penalty\@highpenalty
+	\endgroup
+	\fi
+}
+
+\renewcommand\l@section[2]{
+	\ifnum \c@tocdepth >\m@ne
+	\addpenalty{-\@highpenalty} %
+%	\vskip 1.0em \@plus\p@
+	\setlength\@tempdima{2.3em} %
+	\begingroup %{}
+	\ifthenelse{\boolean{ABNTpagenumstyle}}
+		{\renewcommand{\@pnumwidth}{1.4em}}
+		{}
+	\parindent \z@ \rightskip \@pnumwidth
+	\parfillskip -\@pnumwidth
+%	\leavevmode \normalsize\ABNTtocchapterfont
+	\advance\leftskip\@tempdima
+	\hskip -\leftskip
+	#1\nobreak\dotfill \nobreak%
+	\ifthenelse{\boolean{ABNTpagenumstyle}}
+		{%
+			\hb@xt@\@pnumwidth{\hss
+				\ifthenelse{\not\equal{#2}{}}{{\normalfont \thinspace#2}}{}}\par
+		}
+		{%
+			\hb@xt@\@pnumwidth{\hss #2}\par
+		}
+	\penalty\@highpenalty
+	\endgroup
+	\fi
+}
+
+\renewcommand\l@subsection[2]{
+	\ifnum \c@tocdepth >\m@ne
+	\addpenalty{-\@highpenalty} %
+%	\vskip 1.0em \@plus\p@
+	\setlength\@tempdima{3.2em} %
+	\begingroup %{}
+	\ifthenelse{\boolean{ABNTpagenumstyle}}
+		{\renewcommand{\@pnumwidth}{1.4em}}
+		{}
+	\parindent \z@ \rightskip \@pnumwidth
+	\parfillskip -\@pnumwidth
+%	\leavevmode \normalsize\ABNTtocchapterfont
+	\advance\leftskip\@tempdima
+	\hskip -\leftskip
+	#1\nobreak\dotfill \nobreak%
+	\ifthenelse{\boolean{ABNTpagenumstyle}}
+		{%
+			\hb@xt@\@pnumwidth{\hss
+				\ifthenelse{\not\equal{#2}{}}{{\normalfont \thinspace#2}}{}}\par
+		}
+		{%
+			\hb@xt@\@pnumwidth{\hss #2}\par
+		}
+	\penalty\@highpenalty
+	\endgroup
+	\fi
+}
+
+% Altera o espa\c{c}amento do sum\'{a}rio
+%\renewcommand*\l@section{\@dottedtocline{1}{0em}{2.3em}}
+%\renewcommand*\l@subsection{\@dottedtocline{2}{0em}{3.2em}}
+\renewcommand*\l@subsubsection{\@dottedtocline{3}{0em}{4.1em}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% L I S T A D E F I G U R A S %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Cria um comando auxiliar para montagem da lista de figuras
+\newcommand{\figfillnum}[1]{%
+{
+% \hspace{1em}
+\normalfont\dotfill}\nobreak
+\hb@xt@\@pnumwidth{\hfil\normalfont #1}{}\par}
+
+% Altera a forma de montagem da lista de figuras
+\renewcommand*{\l@figure}[2]{
+\parskip 0.0em
+\leftskip 3.3em
+\rightskip 1.6em
+\parfillskip -\rightskip
+\parindent 0em
+\@tempdima 1.5em
+\advance\leftskip \@tempdima \null\nobreak\hskip -\leftskip
+{Figura \normalfont #1}\nobreak \figfillnum{#2}}
+
+% Altera a forma de montagem da lista de tabelas
+\renewcommand*{\l@table}[2]{
+\parskip 0.0em
+\leftskip 3.3em
+\rightskip 1.6em
+\parfillskip -\rightskip
+\parindent 0em
+\@tempdima 1.5em
+\advance\leftskip \@tempdima \null\nobreak\hskip -\leftskip
+{Tabela \normalfont #1}\nobreak \figfillnum{#2}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% A L G O R I T M O S %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%altera nome da listagem de algoritmo
+\renewcommand{\lstlistingname}{Algoritmo}
+%altera nome da listagem de algoritmo
+\renewcommand{\lstlistlistingname}{Lista de Algoritmos}
+
+%personaliza\c{c}\~{a}o do tipo de algoritmo
+\lstset{
+numbers=left, %n\'{u}mero das linhas a esquerda
+stepnumber=1, %inicia na linha 1
+firstnumber=1, %mostra os n\'{u}meros de 1 em 1 linha
+numberstyle=\tiny, %estilo dos n\'{u}meros das linhas
+extendedchars=true, %utiliza acentua\c{c}\~{a}o
+breaklines=true, %quebra autom\'{a}tica de linha
+frame=tb, % "linha" em cima e embaixo (top, bottom)
+basicstyle=\footnotesize, %estilo da fonte do algoritmo
+stringstyle=\ttfamily, %estilo dos literaistitlesec
+showstringspaces=false, %n\~{a}o mostra espa\c{c}o entre os caracteres literais
+inputencoding=utf8, %acentua\c{c}\~{a}o em coment\'{a}rios
+captionpos=b, % o "caption" dos algoritmos vai embaixo do algoritmo
+breakautoindent=true %auto identa depois de uma quebra de linha
+}
+
+%muda para o cap\'{i}tulo n\~{a}o reiniciar a numera\c{c}\~{a}o dos algoritmos
+\makeatletter
+\@removefromreset{lstlisting}{chapter}
+\makeatother
+
+%muda para n\~{a}o mostrar: n\'{u}meroCap\'{i}tulo.numeroAlgoritmo, e mostrar somente numeroAlgoritmo nos \'{I}ndices criados %automaticamente
+%\renewcommand{\thelstlisting}{\arabic{lstlisting} }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% P E R S O N A L I Z A \c{C} \~{O} E S %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% a sigla, aparece logo depois do comando, conforme as normas ABNT
+\renewcommand{\sigla}[2]{\IndexCommand{sigla}{#1 #2}{#1& #2} #2 (#1)}
+
+% cria um comando listadealgoritmos
+\let \listadealgoritmos \lstlistoflistings \relax
+
+% MUDA OS CAP\'{I}TULOS PARA FICAREM EM MAI\'{U}SCULO NO SUM\'{A}RIO
+\let \oldchap=\chapter{}
+\renewcommand*{\chapter}{%
+\secdef{\Chap}{\ChapS}%
+}
+\newcommand\ChapS[1]{\oldchap*{\MakeUppercase{#1}}}
+\newcommand\Chap[2][]{\oldchap[\MakeUppercase{#1}]{\MakeUppercase{#2}}}
+
+% MUDA AS SE\c{C}\~{O}ES PARA FICAREM EM MAI\'{U}SCULO NO SUM\'{A}RIO
+\let \oldsect=\section{}
+\renewcommand*{\section}{%
+\secdef{\Sect}{\SectS}%
+}
+\newcommand\SectS[1]{\oldsect*{\MakeUppercase{#1}}}
+\newcommand\Sect[2][]{\oldsect[\MakeUppercase{#1}]{\MakeUppercase{#2}}}
+
+% MUDA AS SUBSE\c{C}\~{O}ES PARA FICAREM EM MAI\'{U}SCULO NO SUM\'{A}RIO
+\let \oldsubsect=\subsection{}
+\renewcommand*{\subsection}{%
+\secdef{\SubSect}{\SubSectS}%
+}
+\newcommand\SubSectS[1]{\oldsubsect*{\textit{\MakeUppercase{#1}}}}
+\newcommand\SubSect[2][]{\oldsubsect[\textit{\MakeUppercase{#1}}]{\textit{\MakeUppercase{#2}}}}
+
+% MUDA AS SUBSUBSE\c{C}\~{O}ES PARA FICAREM EM MAI\'{U}SCULO NO SUM\'{A}RIO
+%\let \oldsubsubsect=\subsubsection{}
+%\renewcommand*{\subsubsection}{%
+%\secdef{\SubSubSect}{\SubSubSectS}%
+%}
+%\newcommand\SubSubSectS[1]{\oldsubsubsect*{\MakeUppercase{#1}}}
+%\newcommand\SubSubSect[2][]{\oldsubsubsect[\MakeUppercase{#1}]{\MakeUppercase{#2}}}
+
+%altera os t\'{i}tulos de refer\^{e}ncia e anexo para ficarem em mai\'{u}sculo
+\renewcommand{\ABNTbibliographyname}{REFER\^ENCIAS}
+\renewcommand{\annexname}{ANEXO}
+
+%altera o tamanho dos t\'{i}tulos dos cap\'{i}tulos para 14, como a professora quer!!
+\renewcommand{\ABNTCHAPTERfont}{\bfseries\slshape}
+\renewcommand{\ABNTChapterfont}{\bfseries\itshape}
+\renewcommand{\ABNTtocchapterfont}{\ABNTchapterfont\upshape}
+\renewcommand{\ABNTchaptersize}{\large}
+%altera o tamanho dos t\'{i}tulos das sections para 14, como a professora quer!!
+\renewcommand{\ABNTanapsize}{\large}
+
+\renewcommand{\ABNTsectionfont}{}
+\renewcommand{\ABNTsectionfontsize}{\large}
+
+\renewcommand{\ABNTsubsectionfont}{}
+\renewcommand{\ABNTsubsectionfontsize}{}
+
+\renewcommand{\ABNTsubsubsectionfont}{}
+\renewcommand{\ABNTsubsubsectionfontsize}{}
+
+\renewcommand{\ABNTparagraphfont}{\bfseries}
+\renewcommand{\ABNTparagraphfontsize}{\normalsize}
+
+\renewcommand{\ABNTsubparagraphfont}{\bfseries}
+\renewcommand{\ABNTsubparagraphfontsize}{\normalsize}
+
+\renewcommand{\instituicaoformat}{\scshape}
+\renewcommand{\autorformat}{\large\ABNTsectionfont}
+\renewcommand{\orientadorformat}{\large}
+\renewcommand{\orientadornameformat}{}
+\renewcommand{\coorientadorformat}{\large}
+\renewcommand{\coorientadornameformat}{}
+\renewcommand{\comentarioformat}{}
+\renewcommand{\localformat}{}
+\renewcommand{\dataformat}{}
+\renewcommand{\tituloformat}{\LARGE\ABNTchapterfont}
+
+%altera o titulo para como a professora quer!!
+\renewcommand{\tituloformat}{\large \ABNTchapterfont}
+%altera o autor para como a professora quer!!
+\renewcommand{\autorformat}{\large \ABNTchapterfont}

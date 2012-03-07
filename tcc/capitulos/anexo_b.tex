@@ -1,0 +1,596 @@
+\chapter{ANEXO B -- CÓDIGO FONTE DO DECODIFICADOR DO SOFTWARE DE REFERÊNCIA - ALTERAÇÕES REALIZADAS}
+
+Este anexo contém o código fonte das alterações realizadas no decodificador do software de referência durante o desenvolvimento do trabalho. Como os fontes dos arquivos modificados são muito extensos apenas as partes mais relevantes se encontram neste anexo.
+
+\section{Alterações realizadas no arquivo ldecod/inc/global.h}
+
+\begin{lstlisting}
+
+// video parameters
+typedef struct video_par
+{
+  /* Outros campos */
+
+  /* metadata buffer. */
+  ExtractedMetadataBuffer * metadata_buffer;
+} VideoParameters;
+
+\end{lstlisting}
+
+\section{Alterações realizadas no arquivo ldecod/src/decoder\_test.c}
+
+\begin{lstlisting}
+
+int main(int argc, char **argv)
+{
+  int iRet;
+  DecodedPicList *pDecPicList;
+  int hFileDecOutput0=-1, hFileDecOutput1=-1;
+  int iFramesOutput=0, iFramesDecoded=0;
+  InputParameters InputParams;
+  ExtractedMetadataBuffer * metadata_buffer = NULL;
+
+#if DECOUTPUT_TEST
+  hFileDecOutput0 = open(DECOUTPUT_VIEW0_FILENAME, OPENFLAGS_WRITE, OPEN_PERMISSIONS);
+  fprintf(stdout, "Decoder output view0: %s\n", DECOUTPUT_VIEW0_FILENAME);
+  hFileDecOutput1 = open(DECOUTPUT_VIEW1_FILENAME, OPENFLAGS_WRITE, OPEN_PERMISSIONS);
+  fprintf(stdout, "Decoder output view1: %s\n", DECOUTPUT_VIEW1_FILENAME);
+#endif
+
+  //get input parameters;
+  Configure(&InputParams, argc, argv);
+  //open decoder;
+
+  /* Create the metadata buffer */
+  metadata_buffer = extracted_metadata_buffer_new();
+
+  iRet = OpenDecoder(&InputParams, metadata_buffer);
+  if(iRet != DEC_OPEN_NOERR)
+  {
+    fprintf(stderr, "Open encoder failed: 0x%x!\n", iRet);
+    return -1; //failed;
+  }
+
+  //decoding;
+  do
+  {
+    iRet = DecodeOneFrame(&pDecPicList);
+    if(iRet==DEC_EOS || iRet==DEC_SUCCEED)
+    {
+      //process the decoded picture, output or display;
+      iFramesOutput += WriteOneFrame(pDecPicList, hFileDecOutput0, hFileDecOutput1, 0);
+      iFramesDecoded++;
+    }
+    else
+    {
+      //error handling;
+      fprintf(stderr, "Error in decoding process: 0x%x\n", iRet);
+    }
+  }while((iRet == DEC_SUCCEED) && ((p_Dec->p_Inp->iDecFrmNum==0) || (iFramesDecoded<p_Dec->p_Inp->iDecFrmNum)));
+
+  iRet = FinitDecoder(&pDecPicList);
+
+  iFramesOutput += WriteOneFrame(pDecPicList, hFileDecOutput0, hFileDecOutput1 , 1);
+  iRet = CloseDecoder();
+
+  //quit;
+  if(hFileDecOutput0>=0)
+  {
+    close(hFileDecOutput0);
+  }
+  if(hFileDecOutput1>=0)
+  {
+    close(hFileDecOutput1);
+  }
+
+  /* free the metadata buffer */
+  extracted_metadata_buffer_free(metadata_buffer);
+
+  //printf("%d frames are decoded.\n", iFramesDecoded);
+  //printf("%d frames are decoded, %d frames output.\n", iFramesDecoded, iFramesOutput);
+  return 0;
+}
+
+\end{lstlisting}
+
+\section{Alterações realizadas no arquivo ldecod/src/output.c}
+
+\begin{lstlisting}
+
+static void decoder_draw_bounding_box(ExtractedMetadata * metadata, StorablePicture *p)
+{
+  static const int BOUNDING_BOX_BORDER_SIZE    = 4;
+  static const unsigned char BOUNDING_BOX_LUMA = 0;
+  static const unsigned char BOUNDING_BOX_U    = 0;
+  static const unsigned char BOUNDING_BOX_V    = 220;   
+
+  ExtractedObjectBoundingBox * bounding_box = extracted_object_bounding_box_from_metadata(metadata);
+  int box_x                                 = 0;
+  int box_y                                 = 0;
+  int box_width                             = 0;
+  int box_height                            = 0;
+  int row                                   = 0;
+ 
+  if (!bounding_box) {
+    return;
+  }
+
+  extracted_object_bounding_box_get_data(bounding_box, NULL, &box_x, &box_y, &box_width, &box_height);
+
+  /* printf("decoder_draw_bounding_box: size_x[%d], size_y[%d], size_x_cr[%d], size_y_cr[%d]\n", 
+                                     p->size_x, p->size_y, p->size_x_cr, p->size_y_cr); */
+
+  /* Validate bounding box */
+  if ( (box_x + box_width > p->size_x) ||
+       (box_y + box_height > p->size_y)) {
+      printf("decoder_draw_bounding_box: ERROR: bouding box out of the frame !!!\n");
+      return;
+  }
+
+  /* lets drawn on the luma information */
+
+  /* drawn bounding box top */
+  for (row = box_y; row < box_y + BOUNDING_BOX_BORDER_SIZE; row++) {
+    memset(p->imgY[row] + box_x, BOUNDING_BOX_LUMA, box_width);
+  }
+
+  /* drawn bounding box left and right */
+  for (row = box_y + BOUNDING_BOX_BORDER_SIZE; row <= box_y + box_height - BOUNDING_BOX_BORDER_SIZE; row++) {
+    //printf("KMLO row[%d]\n", row);
+    memset(p->imgY[row] + box_x, BOUNDING_BOX_LUMA, BOUNDING_BOX_BORDER_SIZE); /* left side */
+    memset(p->imgY[row] + box_x + box_width - BOUNDING_BOX_BORDER_SIZE, BOUNDING_BOX_LUMA, BOUNDING_BOX_BORDER_SIZE); /* right side */
+  }
+
+  /* drawn bounding box bottom */
+  for (row = box_y + box_height - 1; row > box_y + box_height - BOUNDING_BOX_BORDER_SIZE; row--) {
+    memset(p->imgY[row] + box_x, BOUNDING_BOX_LUMA, box_width);
+  }
+
+  if (p->imgUV) {
+    /* lets draw on the chroma information */
+    float luma_chroma_x_ratio = p->size_x / p->size_x_cr;
+    float luma_chroma_y_ratio = p->size_y / p->size_y_cr;
+
+    /* drawn bounding box top */
+    for (row = box_y / luma_chroma_y_ratio;
+         row < (box_y + BOUNDING_BOX_BORDER_SIZE) / luma_chroma_y_ratio; row++) {
+
+      memset(p->imgUV[0][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_U, box_width / luma_chroma_x_ratio);
+      memset(p->imgUV[1][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_V, box_width / luma_chroma_x_ratio);
+    }
+
+    int chroma_side_border_size = BOUNDING_BOX_BORDER_SIZE / luma_chroma_x_ratio;
+
+    /* drawn bounding box left and right */
+    for (row = (box_y + BOUNDING_BOX_BORDER_SIZE) / luma_chroma_y_ratio; 
+         row <= (box_y + box_height - BOUNDING_BOX_BORDER_SIZE) / luma_chroma_y_ratio; row++) {
+
+      memset(p->imgUV[0][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_U, chroma_side_border_size); /* left side */
+      memset(p->imgUV[0][row] + (int) ((box_x + box_width - BOUNDING_BOX_BORDER_SIZE) / luma_chroma_x_ratio), 
+                                       BOUNDING_BOX_U, chroma_side_border_size); /* right side */
+
+      memset(p->imgUV[1][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_V, chroma_side_border_size); /* left side */
+      memset(p->imgUV[1][row] + (int) ((box_x + box_width - BOUNDING_BOX_BORDER_SIZE) / luma_chroma_x_ratio), 
+                                       BOUNDING_BOX_V, chroma_side_border_size); /* right side */
+    }
+
+    /* drawn bounding box bottom */
+    for (row = (box_y + box_height - 1) / luma_chroma_y_ratio; 
+         row > (box_y + box_height - BOUNDING_BOX_BORDER_SIZE) / luma_chroma_y_ratio; row--) {
+
+      memset(p->imgUV[0][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_U, box_width / luma_chroma_x_ratio);
+      memset(p->imgUV[1][row] + (int) (box_x / luma_chroma_x_ratio), BOUNDING_BOX_V, box_width / luma_chroma_x_ratio);
+    }
+
+  }
+
+static void write_out_picture(VideoParameters *p_Vid, StorablePicture *p, int p_out)
+{
+  InputParameters *p_Inp = p_Vid->p_Inp;
+  DecodedPicList *pDecPic;
+
+  static const int SubWidthC  [4]= { 1, 2, 2, 1};
+  static const int SubHeightC [4]= { 1, 2, 1, 1};
+
+#if (MVC_EXTENSION_ENABLE)
+  char out_ViewFileName[FILE_NAME_SIZE], chBuf[FILE_NAME_SIZE], *pch;  
+  int iViewIdx = GetVOIdx(p_Vid, p->view_id);
+#endif
+
+  int crop_left, crop_right, crop_top, crop_bottom;
+  int symbol_size_in_bytes = ((p_Vid->pic_unit_bitsize_on_disk+7) >> 3);
+  Boolean rgb_output = (Boolean) (p_Vid->active_sps->vui_seq_parameters.matrix_coefficients==0);
+  unsigned char *buf;
+  //int iPicSizeTab[4] = {2, 3, 4, 6};
+  int iLumaSize, iFrameSize;
+  int iLumaSizeX, iLumaSizeY;
+  int iChromaSizeX, iChromaSizeY;
+
+  int ret;
+
+  if (p->non_existing)
+    return;
+
+  /* This seems the best place to do some process on the decoded frame, right before it is written on the file. */
+  static int frameCount        = 0; /* Is this the best way to get the frame number ? */
+  ExtractedMetadata * metadata = extracted_metadata_buffer_get(p_Vid->metadata_buffer, frameCount);
+
+  frameCount++;
+
+  if (metadata) {
+    /* Lets process and free the metadata relative to the current frame */
+   decoder_draw_bounding_box(metadata, p);
+   extracted_metadata_free(metadata);
+   metadata = NULL;
+ }
+
+ /* End of metadata processing on the decoded frame. */
+
+
+#if (ENABLE_OUTPUT_TONEMAPPING)
+  // note: this tone-mapping is working for RGB format only. Sharp
+  if (p->seiHasTone_mapping && rgb_output)
+  {
+    //printf("output frame %d with tone model id %d\n",  p->frame_num, p->tone_mapping_model_id);
+    symbol_size_in_bytes = (p->tonemapped_bit_depth>8)? 2 : 1;
+    tone_map(p->imgY, p->tone_mapping_lut, p->size_x, p->size_y);
+    tone_map(p->imgUV[0], p->tone_mapping_lut, p->size_x_cr, p->size_y_cr);
+    tone_map(p->imgUV[1], p->tone_mapping_lut, p->size_x_cr, p->size_y_cr);
+  }
+#endif
+
+  if (p->frame_cropping_flag)
+  {
+    crop_left   = SubWidthC[p->chroma_format_idc] * p->frame_cropping_rect_left_offset;
+    crop_right  = SubWidthC[p->chroma_format_idc] * p->frame_cropping_rect_right_offset;
+    crop_top    = SubHeightC[p->chroma_format_idc]*( 2 - p->frame_mbs_only_flag ) * p->frame_cropping_rect_top_offset;
+    crop_bottom = SubHeightC[p->chroma_format_idc]*( 2 - p->frame_mbs_only_flag ) * p->frame_cropping_rect_bottom_offset;
+  }
+  else
+  {
+    crop_left = crop_right = crop_top = crop_bottom = 0;
+  }
+  iChromaSizeX =  p->size_x_cr- p->frame_cropping_rect_left_offset -p->frame_cropping_rect_right_offset;
+  iChromaSizeY = p->size_y_cr - ( 2 - p->frame_mbs_only_flag ) * p->frame_cropping_rect_top_offset -( 2 - p->frame_mbs_only_flag ) * p->frame_cropping_rect_bottom_offset;
+  iLumaSizeX = p->size_x-crop_left-crop_right;
+  iLumaSizeY = p->size_y-crop_top-crop_bottom;
+  iLumaSize = iLumaSizeX*iLumaSizeY*symbol_size_in_bytes;
+  iFrameSize = (iLumaSizeX*iLumaSizeY + 2*(iChromaSizeX*iChromaSizeY))*symbol_size_in_bytes; //iLumaSize*iPicSizeTab[p->chroma_format_idc]/2;
+
+  //printf ("write frame size: %dx%d\n", p->size_x-crop_left-crop_right,p->size_y-crop_top-crop_bottom );
+  initOutput(p_Vid, symbol_size_in_bytes);
+
+  // KS: this buffer should actually be allocated only once, but this is still much faster than the previous version
+  pDecPic = GetOneAvailDecPicFromList(p_Vid->pDecOuputPic, 0);
+  
+  if(pDecPic->pY == NULL)
+  {
+    pDecPic->pY = malloc(iFrameSize);
+    pDecPic->pU = pDecPic->pY+iLumaSize;
+    pDecPic->pV = pDecPic->pU + ((iFrameSize-iLumaSize)>>1);
+    //init;
+    pDecPic->iYUVFormat = p->chroma_format_idc;
+    pDecPic->iYUVStorageFormat = 0;
+    pDecPic->iBitDepth = p_Vid->pic_unit_bitsize_on_disk;
+    pDecPic->iWidth = iLumaSizeX; //p->size_x;
+    pDecPic->iHeight = iLumaSizeY; //p->size_y;
+    pDecPic->iYBufStride = iLumaSizeX*symbol_size_in_bytes; //p->size_x *symbol_size_in_bytes;
+    pDecPic->iUVBufStride = iChromaSizeX*symbol_size_in_bytes; //p->size_x_cr*symbol_size_in_bytes;
+  }
+
+#if (MVC_EXTENSION_ENABLE)
+  {
+    pDecPic->bValid = 1;
+    pDecPic->iViewId = p->view_id >=0 ? p->view_id : -1;
+  }
+#else
+  pDecPic->bValid = 1;
+#endif
+  
+  pDecPic->iPOC = p->frame_poc;
+  //buf = pDecPic->pY; //malloc (p->size_x*p->size_y*symbol_size_in_bytes);
+  if (NULL==pDecPic->pY)
+  {
+    no_mem_exit("write_out_picture: buf");
+  }
+
+#if (MVC_EXTENSION_ENABLE)
+  if (p->view_id >= 0 && p_Inp->DecodeAllLayers == 1)
+  {
+    if((p_Vid->p_out_mvc[iViewIdx] == -1) && (strcasecmp(p_Inp->outfile, "\"\"")!=0) && (strlen(p_Inp->outfile)>0))
+    {
+      strcpy(chBuf, p_Inp->outfile);
+      pch = strrchr(chBuf, '.');
+      if(pch)
+        *pch = '\0';
+      if (strcmp("nul", chBuf))
+      {
+        sprintf(out_ViewFileName, "%s_ViewId%04d.yuv", chBuf, p->view_id);
+
+        if ((p_Vid->p_out_mvc[iViewIdx]=open(out_ViewFileName, OPENFLAGS_WRITE, OPEN_PERMISSIONS))==-1)
+        {
+          snprintf(errortext, ET_SIZE, "Error open file %s ", out_ViewFileName);
+          fprintf(stderr, "%s\n", errortext);
+          exit(500);
+        }
+      }
+      else
+      {
+        p_Vid->p_out_mvc[iViewIdx] = -1;
+      }
+    }
+    p_out = p_Vid->p_out_mvc[iViewIdx];
+  }
+  else
+  { //Normal AVC
+    if((p_Vid->p_out_mvc[0] == -1) && (strcasecmp(p_Inp->outfile, "\"\"")!=0) && (strlen(p_Inp->outfile)>0))
+    {
+      if( (strcasecmp(p_Inp->outfile, "\"\"")!=0) && ((p_Vid->p_out_mvc[0]=open(p_Inp->outfile, OPENFLAGS_WRITE, OPEN_PERMISSIONS))==-1) )
+      {
+        snprintf(errortext, ET_SIZE, "Error open file %s ",p_Inp->outfile);
+        //error(errortext,500);
+        fprintf(stderr, "%s\n", errortext);
+        exit(500);
+      }
+    }
+    p_out = p_Vid->p_out_mvc[0];
+  }
+#endif
+
+  if(rgb_output)
+  {
+    buf = malloc (p->size_x*p->size_y*symbol_size_in_bytes);
+    crop_left   = p->frame_cropping_rect_left_offset;
+    crop_right  = p->frame_cropping_rect_right_offset;
+    crop_top    = ( 2 - p->frame_mbs_only_flag ) * p->frame_cropping_rect_top_offset;
+    crop_bottom = ( 2 - p->frame_mbs_only_flag ) * p->frame_cropping_rect_bottom_offset;
+
+    p_Vid->img2buf (p->imgUV[1], buf, p->size_x_cr, p->size_y_cr, symbol_size_in_bytes, crop_left, crop_right, crop_top, crop_bottom, pDecPic->iYBufStride);
+    if (p_out >= 0)
+    {
+      ret = write(p_out, buf, (p->size_y_cr-crop_bottom-crop_top)*(p->size_x_cr-crop_right-crop_left)*symbol_size_in_bytes);
+      if (ret != ((p->size_y_cr-crop_bottom-crop_top)*(p->size_x_cr-crop_right-crop_left)*symbol_size_in_bytes))
+      {
+        error ("write_out_picture: error writing to RGB file", 500);
+      }
+    }
+
+    if (p->frame_cropping_flag)
+    {
+      crop_left   = SubWidthC[p->chroma_format_idc] * p->frame_cropping_rect_left_offset;
+      crop_right  = SubWidthC[p->chroma_format_idc] * p->frame_cropping_rect_right_offset;
+      crop_top    = SubHeightC[p->chroma_format_idc]*( 2 - p->frame_mbs_only_flag ) * p->frame_cropping_rect_top_offset;
+      crop_bottom = SubHeightC[p->chroma_format_idc]*( 2 - p->frame_mbs_only_flag ) * p->frame_cropping_rect_bottom_offset;
+    }
+    else
+    {
+      crop_left = crop_right = crop_top = crop_bottom = 0;
+    }
+    if(buf) 
+      free(buf);
+  }
+
+  buf = (pDecPic->bValid==1)? pDecPic->pY: pDecPic->pY+iLumaSizeX*symbol_size_in_bytes;
+
+    p_Vid->img2buf (p->imgY, buf, p->size_x, p->size_y, symbol_size_in_bytes, crop_left, crop_right, crop_top, crop_bottom, pDecPic->iYBufStride);
+
+  if(p_out >=0)
+  {
+    ret = write(p_out, buf, (p->size_y-crop_bottom-crop_top)*(p->size_x-crop_right-crop_left)*symbol_size_in_bytes);
+    if (ret != ((p->size_y-crop_bottom-crop_top)*(p->size_x-crop_right-crop_left)*symbol_size_in_bytes))
+    {
+      error ("write_out_picture: error writing to YUV file", 500);
+    }
+  }
+
+  if (p->chroma_format_idc!=YUV400)
+  {
+    crop_left   = p->frame_cropping_rect_left_offset;
+    crop_right  = p->frame_cropping_rect_right_offset;
+    crop_top    = ( 2 - p->frame_mbs_only_flag ) * p->frame_cropping_rect_top_offset;
+    crop_bottom = ( 2 - p->frame_mbs_only_flag ) * p->frame_cropping_rect_bottom_offset;
+    buf = (pDecPic->bValid==1)? pDecPic->pU : pDecPic->pU + iChromaSizeX*symbol_size_in_bytes;
+
+      p_Vid->img2buf (p->imgUV[0], buf, p->size_x_cr, p->size_y_cr, symbol_size_in_bytes, crop_left, crop_right, crop_top, crop_bottom, pDecPic->iUVBufStride);
+    if(p_out >= 0)
+    {
+      ret = write(p_out, buf, (p->size_y_cr-crop_bottom-crop_top)*(p->size_x_cr-crop_right-crop_left)* symbol_size_in_bytes);
+      if (ret != ((p->size_y_cr-crop_bottom-crop_top)*(p->size_x_cr-crop_right-crop_left)* symbol_size_in_bytes))
+      {
+        error ("write_out_picture: error writing to YUV file", 500);
+      }
+    }
+
+    if (!rgb_output)
+    {
+      buf = (pDecPic->bValid==1)? pDecPic->pV : pDecPic->pV + iChromaSizeX*symbol_size_in_bytes;
+      p_Vid->img2buf (p->imgUV[1], buf, p->size_x_cr, p->size_y_cr, symbol_size_in_bytes, crop_left, crop_right, crop_top, crop_bottom, pDecPic->iUVBufStride);
+
+      if(p_out >= 0)
+      {
+        ret = write(p_out, buf, (p->size_y_cr-crop_bottom-crop_top)*(p->size_x_cr-crop_right-crop_left)*symbol_size_in_bytes);
+        if (ret != ((p->size_y_cr-crop_bottom-crop_top)*(p->size_x_cr-crop_right-crop_left)*symbol_size_in_bytes))
+        {
+          error ("write_out_picture: error writing to YUV file", 500);
+        }
+      }
+    }
+  }
+  else
+  {
+    if (p_Inp->write_uv)
+    {
+      int i,j;
+      imgpel cr_val = (imgpel) (1<<(p_Vid->bitdepth_luma - 1));
+
+      get_mem3Dpel (&(p->imgUV), 1, p->size_y/2, p->size_x/2);
+      
+      for (j=0; j<p->size_y/2; j++)
+      {
+        for (i=0; i<p->size_x/2; i++)
+        {
+          p->imgUV[0][j][i]=cr_val;
+        }
+      }
+
+      // fake out U=V=128 to make a YUV 4:2:0 stream
+      buf = malloc (p->size_x*p->size_y*symbol_size_in_bytes);
+      p_Vid->img2buf (p->imgUV[0], buf, p->size_x/2, p->size_y/2, symbol_size_in_bytes, crop_left/2, crop_right/2, crop_top/2, crop_bottom/2, pDecPic->iYBufStride/2);
+
+      ret = write(p_out, buf, symbol_size_in_bytes * (p->size_y-crop_bottom-crop_top)/2 * (p->size_x-crop_right-crop_left)/2 );
+      if (ret != (symbol_size_in_bytes * (p->size_y-crop_bottom-crop_top)/2 * (p->size_x-crop_right-crop_left)/2))
+      {
+        error ("write_out_picture: error writing to YUV file", 500);
+      }
+      ret = write(p_out, buf, symbol_size_in_bytes * (p->size_y-crop_bottom-crop_top)/2 * (p->size_x-crop_right-crop_left)/2 );
+      if (ret != (symbol_size_in_bytes * (p->size_y-crop_bottom-crop_top)/2 * (p->size_x-crop_right-crop_left)/2))
+      {
+        error ("write_out_picture: error writing to YUV file", 500);
+      }
+      free(buf);
+      free_mem3Dpel(p->imgUV);
+      p->imgUV=NULL;
+    }
+  }
+
+  //free(buf);
+
+  //  fsync(p_out);
+}
+
+}
+
+\end{lstlisting}
+
+\section{Alterações realizadas no arquivo ldecod/src/sei.c }
+
+\begin{lstlisting}
+
+void InterpretSEIMessage(byte* msg, int size, VideoParameters *p_Vid, Slice *pSlice)
+{
+  int payload_type = 0;
+  int payload_size = 0;
+  int offset = 1;
+  byte tmp_byte;
+  
+  do
+  {
+    // sei_message();
+    payload_type = 0;
+    tmp_byte = msg[offset++];
+    while (tmp_byte == 0xFF)
+    {
+      payload_type += 255;
+      tmp_byte = msg[offset++];
+    }
+    payload_type += tmp_byte;   // this is the last byte
+
+    payload_size = 0;
+    tmp_byte = msg[offset++];
+    while (tmp_byte == 0xFF)
+    {
+      payload_size += 255;
+      tmp_byte = msg[offset++];
+    }
+    payload_size += tmp_byte;   // this is the last byte
+
+    switch ( payload_type )     // sei_payload( type, size );
+    {
+    case  SEI_BUFFERING_PERIOD:
+      interpret_buffering_period_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_PIC_TIMING:
+      interpret_picture_timing_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_PAN_SCAN_RECT:
+      interpret_pan_scan_rect_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_FILLER_PAYLOAD:
+      interpret_filler_payload_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_USER_DATA_REGISTERED_ITU_T_T35:
+      interpret_user_data_registered_itu_t_t35_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_USER_DATA_UNREGISTERED:
+    {
+      /* Receive the serialized metadata */
+      byte * serialized_metadata   = NULL;
+      int serialized_metadata_size = 0;
+
+      user_data_parser_unregistered_sei_get_data(msg+offset, payload_size, 
+                                                 &serialized_metadata, &serialized_metadata_size);
+
+      extracted_metadata_buffer_add(p_Vid->metadata_buffer, extracted_metadata_deserialize((const char *) serialized_metadata, serialized_metadata_size));
+      /* Ended receiving the serialized metadata */
+
+      break;
+    }
+    case  SEI_RECOVERY_POINT:
+      interpret_recovery_point_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_DEC_REF_PIC_MARKING_REPETITION:
+      interpret_dec_ref_pic_marking_repetition_info( msg+offset, payload_size, p_Vid, pSlice );
+      break;
+    case  SEI_SPARE_PIC:
+      interpret_spare_pic( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_SCENE_INFO:
+      interpret_scene_information( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_SUB_SEQ_INFO:
+      interpret_subsequence_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_SUB_SEQ_LAYER_CHARACTERISTICS:
+      interpret_subsequence_layer_characteristics_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_SUB_SEQ_CHARACTERISTICS:
+      interpret_subsequence_characteristics_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_FULL_FRAME_FREEZE:
+      interpret_full_frame_freeze_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_FULL_FRAME_FREEZE_RELEASE:
+      interpret_full_frame_freeze_release_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_FULL_FRAME_SNAPSHOT:
+      interpret_full_frame_snapshot_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_PROGRESSIVE_REFINEMENT_SEGMENT_START:
+      interpret_progressive_refinement_start_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_PROGRESSIVE_REFINEMENT_SEGMENT_END:
+      interpret_progressive_refinement_end_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_MOTION_CONSTRAINED_SLICE_GROUP_SET:
+      interpret_motion_constrained_slice_group_set_info( msg+offset, payload_size, p_Vid );
+    case  SEI_FILM_GRAIN_CHARACTERISTICS:
+      interpret_film_grain_characteristics_info ( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_DEBLOCKING_FILTER_DISPLAY_PREFERENCE:
+      interpret_deblocking_filter_display_preference_info ( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_STEREO_VIDEO_INFO:
+      interpret_stereo_video_info_info ( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_TONE_MAPPING:
+      interpret_tone_mapping( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_POST_FILTER_HINTS:
+      interpret_post_filter_hints_info ( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_FRAME_PACKING_ARRANGEMENT:
+      interpret_frame_packing_arrangement_info( msg+offset, payload_size, p_Vid );
+      break;
+    default:
+      interpret_reserved_info( msg+offset, payload_size, p_Vid );
+      break;    
+    }
+    offset += payload_size;
+
+  } while( msg[offset] != 0x80 );    // more_rbsp_data()  msg[offset] != 0x80
+  // ignore the trailing bits rbsp_trailing_bits();
+  assert(msg[offset] == 0x80);      // this is the trailing bits
+  assert( offset+1 == size );
+}
+
+\end{lstlisting}

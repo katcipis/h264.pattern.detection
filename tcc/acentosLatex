@@ -1,0 +1,55 @@
+#!/bin/bash
+if [ -z $1 ]; then
+        echo "Uso: acentosLatex <diretorio-raiz>";
+else
+	echo "extraindo arquivo temporario de acentos"
+	sed "s/^X//" >'/tmp/accents.sed' <<'END_OF_FILE'
+s+á+\\'{a}+g
+s+ã+\\~{a}+g
+s+â+\\^{a}+g
+s+à+\\`{a}+g
+s+é+\\'{e}+g
+s+ê+\\^{e}+g
+s+í+\\'{i}+g
+s+ó+\\'{o}+g
+s+õ+\\~{o}+g
+s+ô+\\^{o}+g
+s+ú+\\'{u}+g
+s+ü+\\"{u}+g
+s+ç+\\c{c}+g
+s+Á+\\'{A}+g
+s+Ã+\\~{A}+g
+s+Â+\\^{A}+g
+s+À+\\`{A}+g
+s+É+\\'{E}+g
+s+Ê+\\^{E}+g
+s+Í+\\'{I}+g
+s+Ó+\\'{O}+g
+s+Õ+\\~{O}+g
+s+Ô+\\^{O}+g
+s+Ú+\\'{U}+g
+s+Ü+\\"{U}+g
+s+Ç+\\c{C}+g
+END_OF_FILE
+
+	echo "extraido em /tmp/accents.sed"
+	for file in $(find $1 -name "*.tex" -type f); do
+		echo "substituindo acentos em " $file " ..."
+		sed -f /tmp/accents.sed -i $file
+	done
+
+        for file in $(find $1 -name "*.bib" -type f); do
+                echo "substituindo acentos em " $file " ..."
+                sed -f /tmp/accents.sed -i $file
+        done
+
+        for file in $(find $1 -name "*.java" -type f); do
+                echo "substituindo acentos em " $file " ..."
+                sed -f /tmp/accents.sed -i $file
+        done
+
+	echo "concluido."
+	echo "removendo arquivo temporario ..."
+	rm -f /tmp/accents.sed
+	echo "substituicao de acentos concluida com sucesso."
+fi

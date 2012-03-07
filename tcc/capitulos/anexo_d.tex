@@ -1,0 +1,67 @@
+\chapter{ANEXO D -- ALTERAÇÕES REALIZADAS NA CONFIGURAÇÃO DO CODIFICADOR DO SOFTWARE DE REFERÊNCIA}
+
+Essas alterações representam as alterações realizadas no arquivo de configuração que vem junto com a distribuição do software de referência, apenas os campos que sofreram alterações são apresentados aqui, os que não são apresentados foram mantidos com o mesmo valor que o arquivo original.
+
+\begin{lstlisting}
+
+ProfileIDC              = 66 # Profile IDC (66=baseline, 77=main, 88=extended; FREXT Profiles: 100=High, 110=High 10, 122=High 4:2:2, 244=High 4:4:4, 44=CAVLC 4:4:4 Intra, 118=Multiview High Profile, 128=Stereo High Profile)
+IntraPeriod           = 12  # Period of I-pictures   (0=only first)
+DisableSubpelME       = 1   # Disable Subpixel Motion Estimation (0=off/default, 1=on)
+SearchRange           = 16  # Max search range
+MEDistortionHPel      = 0   # Select error metric for Half-Pel ME    (0: SAD, 1: SSE, 2: Hadamard SAD)
+MEDistortionQPel      = 0   # Select error metric for Quarter-Pel ME (0: SAD, 1: SSE, 2: Hadamard SAD)
+MDDistortion          = 0   # Select error metric for Mode Decision  (0: SAD, 1: SSE, 2: Hadamard SAD)
+NumberReferenceFrames = 1   # Number of previous frames used for inter motion search (0-16)
+GenerateMultiplePPS   = 0   # Transmit multiple parameter sets. Currently parameters basically enable all WP modes (0: diabled, 1: enabled)
+NumberBFrames          = 0  # Number of B coded frames inserted (0=not used)
+HierarchicalCoding      =  0  # B hierarchical coding (0= off, 1= 2 layers, 2= 2 full hierarchy, 3 = explicit)
+BiPredMESubPel         = 0   # Bipredictive ME Subpixel Consideration (0: disabled, 1: single level, 2: dual level)
+SymbolMode             =  0  # Symbol mode (Entropy coding method: 0=UVLC, 1=CABAC)
+WPMCPrecision            =  0     # Improved Motion Compensation Precision using WP based methods.
+RDPictureDecision        =  0     # Perform multiple pass coding and make RD optimal decision among them
+FastCrIntraDecision    =  1  # Fast Chroma intra mode decision (0:off, 1:on)
+UseExplicitLambdaParams  =  2    # Use explicit lambda scaling parameters (0:disabled, 1:enable lambda weight, 2: use explicit lambda value)
+FixedLambdaISlice        =  29.0  # Fixed Lambda value for I slices
+FixedLambdaPSlice        =  29.0  # Fixed Lambda value for P slices
+FixedLambdaBSlice        =  29.0  # Fixed Lambda value for B slices
+FixedLambdaRefBSlice     =  29.0  # Fixed Lambda value for Referenced B slices
+FixedLambdaSPSlice       =  29.0  # Fixed Lambda value for SP slices
+FixedLambdaSISlice       =  29.0  # Fixed Lambda value for SI slices
+RateControlEnable       = 1     # 0 Disable, 1 Enable
+Bitrate                 = 996000 # Bitrate(bps)
+BasicUnit               = 1     # Number of MBs in the basic unit
+RCMaxQPPSlice           = 44    # maximum P Slice QP value for rate control
+RCMaxQPBSlice           = 46    # maximum B Slice QP value for rate control
+RCMaxQPISlice           = 36    # maximum I Slice QP value for rate control
+RCMaxQPSISlice          = 36    # maximum SI Slice QP value for rate control
+Transform8x8Mode        = 0     # (0: only 4x4 transform, 1: allow using 8x8 transform additionally, 2: only 8x8 transform)
+OffsetMatrixPresentFlag  = 1    # Enable Explicit Offset Quantization Matrices  (0: disable 1: enable)
+AdaptRoundingFixed       = 1    # Enable Global Adaptive rounding for all qps (0: disable, 1: enable - default/old)
+AdaptRndPeriod           = 16   # Period in terms of MBs for updating rounding offsets. 
+AdaptRndWFactorIRef      = 4    # Adaptive Rounding Weight for I/SI slices in reference pictures /4096
+AdaptRndWFactorPRef      = 4    # Adaptive Rounding Weight for P/SP slices in reference pictures /4096
+AdaptRndWFactorBRef      = 4    # Adaptive Rounding Weight for B slices in reference pictures /4096
+AdaptRndWFactorINRef     = 4    # Adaptive Rounding Weight for I/SI slices in non reference pictures /4096
+AdaptRndWFactorPNRef     = 4    # Adaptive Rounding Weight for P/SP slices in non reference pictures /4096
+AdaptRndWFactorBNRef     = 4    # Adaptive Rounding Weight for B slices in non reference pictures /4096
+AdaptRndCrWFactorIRef    = 4    # Chroma Adaptive Rounding Weight for I/SI slices in reference pictures /4096
+AdaptRndCrWFactorPRef    = 4    # Chroma Adaptive Rounding Weight for P/SP slices in reference pictures /4096
+AdaptRndCrWFactorBRef    = 4    # Chroma Adaptive Rounding Weight for B slices in reference pictures /4096
+AdaptRndCrWFactorINRef   = 4    # Chroma Adaptive Rounding Weight for I/SI slices in non reference pictures /4096
+AdaptRndCrWFactorPNRef   = 4    # Chroma Adaptive Rounding Weight for P/SP slices in non reference pictures /4096
+AdaptRndCrWFactorBNRef   = 4    # Chroma Adaptive Rounding Weight for B slices in non reference pictures /4096
+UseRDOQuant              =  0 # Use Rate Distortion Optimized Quantization (0=disable, 1=enable)
+RDOQ_DC                  =  0 # Enable Rate Distortion Optimized Quantization for DC components (0=disable, 1=enable)
+RDOQ_CR                  =  0 # Enable Rate Distortion Optimized Quantization for Chroma components (0=disable, 1=enable)
+RDOQ_DC_CR               =  0 # Enable Rate Distortion Optimized Quantization for Chroma DC components (0=disable, 1=enable)
+RDOQ_QP_Num              =  1 # 1-9: Number of QP tested in RDO_Q (I/P/B slice)
+RDOQ_CP_Mode             =  1 # copy Mode from first QP tested
+RDOQ_CP_MV               =  1 # copy MV from first QP tested
+RDOQ_Fast                =  1 # Fast RDOQ decision method for multiple QPs
+SearchMode               = -1    # Motion estimation mode
+
+\end{lstlisting}
+
+
+
+

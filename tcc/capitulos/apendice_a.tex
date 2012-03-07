@@ -1,0 +1,730 @@
+\chapter{APÊNDICE A -- CODIGO FONTE DO PROCEDIMENTO DE TESTE DA INSERÇÃO DE NALUs SEI}
+
+No caso dos módulos novos, todo o seu fonte é documentado aqui.
+
+No caso dos módulos que já existiam no software de referência e sofreram alterações, apenas as funções que sofreram alteração serão documentadas aqui.
+
+
+\section{Módulo adicionado ao Codificador}
+
+\subsection{Arquivo udata\_gen.h}
+
+\begin{lstlisting}
+/*!
+ *******************************************************************************
+ *  \file
+ *     udata_gen.h
+ *  \brief
+ *     definitions for Supplemental Enhanced Information Userdata Generation
+ *  \author(s)
+ *      - Tiago Katcipis                             <tiagokatcipis@gmail.com>
+ *
+ * *****************************************************************************
+ */
+
+#ifndef UDATA_GEN_H
+#define UDATA_GEN_H
+
+#include "typedefs.h"
+#include "nal.h"
+
+/*!
+ *****************************************************************************************
+ * Generates a SEI NALU that with ONE unregistered userdata SEI message.
+ *
+ * @param data The data to be sent on the SEI unregistered userdata message.
+ * @param size The size of the data.
+ * @return A SEI NALU containing the SEI message.
+ *
+ *****************************************************************************************
+ */
+NALU_t *user_data_generate_unregistered_sei_nalu(char * data, unsigned int size);
+
+/*!
+ *****************************************************************************************
+ * Generates a SEI NALU that with ONE unregistered userdata SEI message.
+ *
+ * @param msg The message to be sent on the SEI unregistered userdata message, 
+ *            must be a 0 terminated string.
+ * @return A SEI NALU containing the SEI message.
+ *
+ ******************************************************************************************
+ */
+NALU_t *user_data_generate_unregistered_sei_nalu_from_msg(char * msg);
+
+/*!
+ *******************************************************************************************
+ * Generates a 0 terminated string to be sent on a SEI NALU. The size of the message is
+ * random, but it will not exceed MAXNALUSIZE.
+ *
+ * @return a 0 terminated string.
+ *
+ ********************************************************************************************
+ */
+char* user_data_generate_create_random_message();
+
+/*!
+ *******************************************************************************************
+ * Frees the resources used by a msg.
+ *
+ * @param msg A previously created message.
+ *
+ ********************************************************************************************
+ */
+void user_data_generate_destroy_random_message(char * msg);
+
+#endif
+\end{lstlisting}
+
+\subsection{Arquivo udata\_gen.c}
+\begin{lstlisting}
+
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "udata_gen.h"
+#include "vlc.h"
+#include "sei.h"
+#include "nalu.h"
+
+
+static const char* random_message_start_template = "\nRandom message[%d] start\n";
+static const char* random_message_end_template   = "\nRandom message[%d] end!\n";
+static int msg_counter                           = 1;
+
+/* Lets guarantee that max_msg_size + headers + 
+   emulation prevention bytes dont exceed the MAXNALUSIZE */
+static const int max_msg_size                    = MAXNALUSIZE - 1024; 
+
+static int growth_rate                           = 1024;
+static int actual_size                           = 1024;
+
+#define MAX_TEMPLATE_MSG_SIZE 512
+static char random_message_start_buffer[MAX_TEMPLATE_MSG_SIZE];
+static char random_message_end_buffer[MAX_TEMPLATE_MSG_SIZE]; 
+
+/*!
+ *************************************************************************************
+ * \brief
+ *    int GenerateUserDataSEImessage_rbsp(int, byte*, char*, unsigned int)
+ *
+ * \return
+ *    size of the RBSP in bytes, negative in case of an error
+ *
+ *************************************************************************************
+ */
+static int GenerateUserDataSEImessage_rbsp (int id, byte *rbsp, char* sei_message, unsigned int sei_message_size)
+{
+  Bitstream *bitstream;
+  unsigned int message_size = sei_message_size;
+
+  int LenInBytes;
+  assert (rbsp != NULL);
+
+  if ((bitstream=calloc(1, sizeof(Bitstream)))==NULL)
+    no_mem_exit("SeqParameterSet:bitstream");
+
+  // .. and use the rbsp provided (or allocated above) for the data
+  bitstream->streamBuffer = rbsp;
+  bitstream->bits_to_go = 8;
+
+  {
+    char uuid_message[9] = "Random"; // This is supposed to be Random
+    unsigned int i;
+
+    TIME_T start_time;
+    gettime(&start_time);    // start time
+
+    u_v (8,"SEI: last_payload_type_byte", 5, bitstream);
+    message_size += 17;
+    while (message_size > 254)
+    {
+      u_v (8,"SEI: ff_byte",255, bitstream);
+      message_size -= 255;
+    }
+    u_v (8,"SEI: last_payload_size_byte",message_size, bitstream);
+
+    // Lets randomize uuid based on time
+    u_v (32,"SEI: uuid_iso_iec_11578",(int) start_time.tv_sec, bitstream);
+    u_v (32,"SEI: uuid_iso_iec_11578",(int) start_time.tv_usec, bitstream);
+
+    u_v (32,"SEI: uuid_iso_iec_11578",(int) (uuid_message[0] << 24) + (uuid_message[1] << 16)  + (uuid_message[2] << 8) + (uuid_message[3] << 0), bitstream);
+    u_v (32,"SEI: uuid_iso_iec_11578",(int) (uuid_message[4] << 24) + (uuid_message[5] << 16)  + (uuid_message[6] << 8) + (uuid_message[7] << 0), bitstream);
+
+    for (i = 0; i < sei_message_size; i++) {
+        u_v (8,"SEI: user_data_payload_byte",sei_message[i], bitstream);
+    }
+
+    /* FIXME we MUST have this zero or the original coded was suposed to zero terminate the msg ? */
+    u_v (8,"SEI: user_data_payload_byte", 0, bitstream);
+  }
+
+  SODBtoRBSP(bitstream);     // copies the last couple of bits into the byte buffer
+  LenInBytes=bitstream->byte_pos;
+
+  free(bitstream);
+  return LenInBytes;
+}
+
+
+/*!
+ *************************************************************************************
+ * \brief
+ *    Function body for Unregistered userdata SEI message NALU generation
+ *
+ * \return
+ *    A NALU containing the SEI message.
+ *
+ *************************************************************************************
+ */
+NALU_t * user_data_generate_unregistered_sei_nalu(char * data, unsigned int size)
+{
+  NALU_t *n = AllocNALU(MAXNALUSIZE);
+  int RBSPlen = 0;
+  byte rbsp[MAXRBSPSIZE];
+
+  RBSPlen = GenerateUserDataSEImessage_rbsp (NORMAL_SEI, rbsp, data, size);
+  RBSPtoNALU (rbsp, n, RBSPlen, NALU_TYPE_SEI, NALU_PRIORITY_DISPOSABLE, 1);
+
+  n->startcodeprefix_len = 4;
+  return n;
+}
+
+
+/*!
+ *************************************************************************************
+ * \brief
+ *    Function body for Unregistered userdata SEI message NALU generation
+ *
+ * \return
+ *    A NALU containing the SEI message.
+ *
+ *************************************************************************************
+ */
+NALU_t *user_data_generate_unregistered_sei_nalu_from_msg(char * msg)
+{
+    return user_data_generate_unregistered_sei_nalu(msg, strlen(msg));
+}
+
+
+/*!
+ *************************************************************************************
+ * \brief
+ *    Function body for random string message generation.
+ *
+ * \return
+ *    A 0 terminted string.
+ *
+ *************************************************************************************
+ */
+char* user_data_generate_create_random_message()
+{
+    char * msg    = 0;
+    int msg_size  = 0;
+    int body_size = 0;
+    int start_len = 0;
+    int end_len   = 0;
+    int i         = 0;
+
+    /* This will help debug of the SEI messages at the decoder */
+    snprintf (random_message_start_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_start_template, msg_counter);
+    snprintf (random_message_end_buffer, MAX_TEMPLATE_MSG_SIZE, random_message_end_template, msg_counter);
+    msg_counter++;
+
+    start_len = strlen(random_message_start_buffer);
+    end_len  = strlen(random_message_end_buffer);
+
+    body_size = actual_size;
+    actual_size += growth_rate;
+
+    if (actual_size > max_msg_size) {
+        actual_size = growth_rate;
+    }
+    
+    msg_size = body_size + start_len +  end_len + 1;
+    msg      = malloc(msg_size);
+
+    /* writing the start */
+    memcpy(msg, random_message_start_buffer, start_len);
+    
+    /* writing the body */
+    for (i = start_len; i < msg_size - end_len; i++) {
+        msg[i] = 'h'; /* whatever */
+    }
+
+    /* writing the end */
+    memcpy(msg + start_len + body_size, random_message_end_buffer, end_len);
+
+    /* 0 terminate it */
+    msg[msg_size - 1] = '\0';
+    return msg;
+}
+
+/*!
+ *************************************************************************************
+ * \brief
+ *    Function body for random message destruction.
+ *************************************************************************************
+ */
+void user_data_generate_destroy_random_message(char * msg)
+{
+    free(msg);
+}
+\end{lstlisting}
+
+\section{Alterações no Codificador}
+
+\subsection{Arquivo filehandle.c}
+\begin{lstlisting}
+
+/*!
+ ************************************************************************
+ * \brief
+ *    This function opens the output files and generates the
+ *    appropriate sequence header
+ ************************************************************************
+ */
+int start_sequence(VideoParameters *p_Vid, InputParameters *p_Inp)
+{
+  int i,len=0, total_pps = (p_Inp->GenerateMultiplePPS) ? 3 : 1;
+  NALU_t *nalu;
+
+  switch(p_Inp->of_mode)
+  {
+    case PAR_OF_ANNEXB:
+      OpenAnnexbFile (p_Vid, p_Inp->outfile);
+      p_Vid->WriteNALU = WriteAnnexbNALU;
+      break;
+    case PAR_OF_RTP:
+      OpenRTPFile (p_Vid, p_Inp->outfile);
+      p_Vid->WriteNALU = WriteRTPNALU;
+      break;
+    default:
+      snprintf(errortext, ET_SIZE, "Output File Mode %d not supported", p_Inp->of_mode);
+      error(errortext,1);
+  }
+
+  // Access Unit Delimiter NALU
+  if ( p_Inp->SendAUD )
+  {
+    len += Write_AUD_NALU(p_Vid);
+  }
+
+  //! As a sequence header, here we write both sequence and picture
+  //! parameter sets.  As soon as IDR is implemented, this should go to the
+  //! IDR part, as both parsets have to be transmitted as part of an IDR.
+  //! An alternative may be to consider this function the IDR start function.
+
+  nalu = NULL;
+  nalu = GenerateSeq_parameter_set_NALU (p_Vid);
+  len += p_Vid->WriteNALU (p_Vid, nalu);
+  FreeNALU (nalu);
+
+#if (MVC_EXTENSION_ENABLE)
+  if(p_Inp->num_of_views==2)
+  {
+    int bits;
+    nalu = NULL;
+    nalu = GenerateSubsetSeq_parameter_set_NALU (p_Vid);
+    bits = p_Vid->WriteNALU (p_Vid, nalu);
+    len += bits;
+    p_Vid->p_Stats->bit_ctr_parametersets_n_v[1] = bits;
+    FreeNALU (nalu);
+  }
+  else
+  {
+    p_Vid->p_Stats->bit_ctr_parametersets_n_v[1] = 0;
+  }
+#endif
+
+  //! Lets write now the Picture Parameter sets. Output will be equal to the total number of bits spend here.
+  for (i=0;i<total_pps;i++)
+  {
+     len = write_PPS(p_Vid, len, i);
+  }
+
+  if (p_Inp->GenerateSEIMessage)
+  {
+    nalu = NULL;
+    nalu = GenerateSEImessage_NALU(p_Inp);
+    len += p_Vid->WriteNALU (p_Vid, nalu);
+    FreeNALU (nalu);
+  }
+
+  /* Lets send 1000 SEI NALUs containing a SEI Userdata Unregistered message */
+  for (i = 0; i < 1000; i++) {
+      nalu = NULL;
+      char * msg = user_data_generate_create_random_message();
+      nalu = user_data_generate_unregistered_sei_nalu_from_msg(msg);
+      len += p_Vid->WriteNALU (p_Vid, nalu);
+      FreeNALU (nalu);
+      user_data_generate_destroy_random_message(msg);
+  }
+
+
+  p_Vid->p_Stats->bit_ctr_parametersets_n = len;
+#if (MVC_EXTENSION_ENABLE)
+  if(p_Inp->num_of_views==2)
+  {
+    p_Vid->p_Stats->bit_ctr_parametersets_n_v[0] = len - p_Vid->p_Stats->bit_ctr_parametersets_n_v[1];
+  }
+#endif
+  return 0;
+}
+\end{lstlisting}
+
+\subsection{Arquivo lencod.c}
+\begin{lstlisting}
+/*!
+ ***********************************************************************
+ * \brief
+ *    Encode a sequence
+ ***********************************************************************
+ */
+static void encode_sequence(VideoParameters *p_Vid, InputParameters *p_Inp)
+{
+  int curr_frame_to_code;
+  int frames_to_code;
+  int frame_num_bak = 0, frame_coded;
+  int frm_struct_buffer;
+  SeqStructure *p_seq_struct = p_Vid->p_pred;
+  FrameUnitStruct *p_frm;
+
+#if (MVC_EXTENSION_ENABLE)
+  int tmp_rate_control_enable = p_Inp->RCEnable;
+
+  if ( p_Inp->num_of_views == 2 )
+  {
+    frames_to_code = p_Inp->no_frames << 1;
+    p_frm = p_seq_struct->p_frm_mvc;
+    frm_struct_buffer = p_seq_struct->num_frames_mvc;
+  }
+  else
+#endif
+  {
+    frames_to_code = p_Inp->no_frames;
+    p_frm = p_seq_struct->p_frm;
+    frm_struct_buffer = p_Vid->frm_struct_buffer;
+  }
+  
+  for (curr_frame_to_code = 0; curr_frame_to_code < frames_to_code; curr_frame_to_code++)
+  {
+#if (MVC_EXTENSION_ENABLE)
+    if ( p_Inp->num_of_views == 2 )
+    {
+      if ( (curr_frame_to_code & 1) == 0 ) // call only for view_id 0
+      {
+        // determine whether to populate additional frames in the prediction structure
+        if ( (curr_frame_to_code >> 1) >= p_Vid->p_pred->pop_start_frame )
+        {
+          int start = p_seq_struct->pop_start_frame, end;
+
+          populate_frm_struct( p_Vid, p_Inp, p_seq_struct, p_Inp->FrmStructBufferLength, frames_to_code >> 1 );
+          end = p_seq_struct->pop_start_frame;
+          populate_frm_struct_mvc( p_Vid, p_Inp, p_seq_struct, start, end );
+        }
+      }
+    }
+    else
+#endif
+    {
+      // determine whether to populate additional frames in the prediction structure
+      if ( curr_frame_to_code >= p_Vid->p_pred->pop_start_frame )
+      {
+        populate_frm_struct( p_Vid, p_Inp, p_seq_struct, p_Inp->FrmStructBufferLength, frames_to_code );
+      }
+    }
+
+    p_Vid->curr_frm_idx = curr_frame_to_code;
+    p_Vid->p_curr_frm_struct = p_frm + ( p_Vid->curr_frm_idx % frm_struct_buffer ); // pointer to current frame structure
+    p_Vid->number = curr_frame_to_code;
+
+#if (MVC_EXTENSION_ENABLE)
+    if(p_Inp->num_of_views==2)
+    {
+      p_Vid->view_id = p_Vid->p_curr_frm_struct->view_id;
+      if ( p_Vid->view_id == 1 )
+      {
+        p_Vid->curr_frm_idx = p_Vid->number = (curr_frame_to_code - 1) >> 1;
+        p_Vid->p_curr_frm_struct->qp = p_Vid->qp = iClip3( -p_Vid->bitdepth_luma_qp_scale, MAX_QP, p_Vid->AverageFrameQP + p_Inp->View1QPOffset );
+      }
+      else
+      {
+        p_Vid->curr_frm_idx = p_Vid->number = curr_frame_to_code >> 1;
+      }
+      if ( p_Vid->view_id == 1 && tmp_rate_control_enable )
+      {
+        p_Inp->RCEnable = 0;        
+      }
+      else
+      {
+        p_Inp->RCEnable = tmp_rate_control_enable;
+      }
+    }
+#endif
+
+    if ( p_Vid->p_curr_frm_struct->frame_no >= p_Inp->no_frames )
+    {
+      continue;
+    }
+
+    // Update frame_num counter
+    frame_num_bak = p_Vid->frame_num;
+    if (p_Vid->last_ref_idc == 1)
+    {      
+      p_Vid->frame_num++;
+
+#if (MVC_EXTENSION_ENABLE)
+      if ( p_Inp->num_of_views == 2 )
+      {
+        p_Vid->frame_num %= (p_Vid->max_frame_num << 1);
+      }
+      else
+#endif
+      p_Vid->frame_num %= p_Vid->max_frame_num;
+    }
+
+    prepare_frame_params(p_Vid, p_Inp, curr_frame_to_code);
+
+    // redundant frame initialization and allocation
+    if (p_Inp->redundant_pic_flag)
+    {
+      init_redundant_frame(p_Vid, p_Inp);
+      set_redundant_frame(p_Vid, p_Inp);
+    }
+
+    frame_coded = encode_one_frame(p_Vid, p_Inp); // encode one frame;
+    if ( !frame_coded )
+    {
+      p_Vid->frame_num = frame_num_bak;
+      continue;
+    }
+
+    p_Vid->last_ref_idc = p_Vid->nal_reference_idc ? 1 : 0;
+
+    // if key frame is encoded, encode one redundant frame
+    if (p_Inp->redundant_pic_flag && p_Vid->key_frame)
+    {
+      encode_one_redundant_frame(p_Vid, p_Inp);
+    }
+
+    if (p_Vid->type == I_SLICE && p_Inp->EnableOpenGOP)
+      p_Vid->last_valid_reference = p_Vid->ThisPOC;
+
+    if (p_Inp->ReportFrameStats)
+      report_frame_statistic(p_Vid, p_Inp);
+
+    /* Inserting a SEI NALU (Userdata Unregistered) */
+    char * msg   = user_data_generate_create_random_message();
+    NALU_t *nalu = user_data_generate_unregistered_sei_nalu_from_msg(msg);
+    p_Vid->WriteNALU (p_Vid, nalu);
+    FreeNALU (nalu);
+    user_data_generate_destroy_random_message(msg);
+  }
+
+#if EOS_OUTPUT
+  end_of_stream(p_Vid);
+#endif
+
+#if (MVC_EXTENSION_ENABLE)
+  if(p_Inp->num_of_views == 2)
+  {
+    p_Inp->RCEnable = tmp_rate_control_enable;
+  }
+#endif
+}
+\end{lstlisting}
+
+\section{Módulo adicionado ao Decodificador}
+
+\subsection{Arquivo udata\_parser.h}
+\begin{lstlisting}
+/*!
+ ************************************************************************
+ *  \file
+ *     udata_parser.h
+ *  \brief
+ *     definitions for Supplemental Enhanced Information Userdata Parsing
+ *  \author(s)
+ *      - Tiago Katcipis                             <tiagokatcipis@gmail.com>
+ *
+ * ************************************************************************
+ */
+
+#ifndef UDATA_PARSER_H
+#define UDATA_PARSER_H
+
+#include "typedefs.h"
+
+/*!
+ *******************************************************************************
+ * Parses a SEI User Data Unregistered message, dumping all its data at stdout.
+ *
+ * @param payload The payload of the SEI message.
+ * @param size The size of the payload.
+ *
+ *******************************************************************************
+ */
+void user_data_parser_unregistered_sei(byte* payload, int size);
+
+#endif
+\end{lstlisting}
+
+\subsection{Arquivo udata\_parser.c}
+\begin{lstlisting}
+#include "udata_parser.h"
+#include <stdio.h>
+
+#define UUID_ISO_IEC_OFFSET 16 
+
+
+void user_data_parser_unregistered_sei( byte* payload, int size)
+{
+  int offset = 0;
+  byte payload_byte;
+
+  printf("\nUser data unregistered SEI message, size[%d]\n", size);
+  printf("uuid_iso_11578 = 0x");
+  
+  assert (size>=UUID_ISO_IEC_OFFSET);
+
+  for (offset = 0; offset < UUID_ISO_IEC_OFFSET; offset++)
+  {
+    printf("%02x",payload[offset]);
+  }
+
+  printf("\nUser data unregistered SEI message start\n");
+
+  while (offset < size)
+  {
+    payload_byte = payload[offset];
+    offset ++;
+    printf("%c", payload_byte);
+  }
+
+  printf("\nUser data unregistered SEI message end \n");
+}
+\end{lstlisting}
+
+\section{Alterações no Decodificador}
+
+\subsection{Arquivo sei.c}
+\begin{lstlisting}
+void InterpretSEIMessage(byte* msg, int size, VideoParameters *p_Vid, Slice *pSlice)
+{
+  int payload_type = 0;
+  int payload_size = 0;
+  int offset = 1;
+  byte tmp_byte;
+  
+  do
+  {
+    // sei_message();
+    payload_type = 0;
+    tmp_byte = msg[offset++];
+    while (tmp_byte == 0xFF)
+    {
+      payload_type += 255;
+      tmp_byte = msg[offset++];
+    }
+    payload_type += tmp_byte;   // this is the last byte
+
+    payload_size = 0;
+    tmp_byte = msg[offset++];
+    while (tmp_byte == 0xFF)
+    {
+      payload_size += 255;
+      tmp_byte = msg[offset++];
+    }
+    payload_size += tmp_byte;   // this is the last byte
+
+    switch ( payload_type )     // sei_payload( type, size );
+    {
+    case  SEI_BUFFERING_PERIOD:
+      interpret_buffering_period_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_PIC_TIMING:
+      interpret_picture_timing_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_PAN_SCAN_RECT:
+      interpret_pan_scan_rect_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_FILLER_PAYLOAD:
+      interpret_filler_payload_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_USER_DATA_REGISTERED_ITU_T_T35:
+      interpret_user_data_registered_itu_t_t35_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_USER_DATA_UNREGISTERED:
+      user_data_parser_unregistered_sei(msg+offset, payload_size);
+      break;
+    case  SEI_RECOVERY_POINT:
+      interpret_recovery_point_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_DEC_REF_PIC_MARKING_REPETITION:
+      interpret_dec_ref_pic_marking_repetition_info( msg+offset, payload_size, p_Vid, pSlice );
+      break;
+    case  SEI_SPARE_PIC:
+      interpret_spare_pic( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_SCENE_INFO:
+      interpret_scene_information( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_SUB_SEQ_INFO:
+      interpret_subsequence_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_SUB_SEQ_LAYER_CHARACTERISTICS:
+      interpret_subsequence_layer_characteristics_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_SUB_SEQ_CHARACTERISTICS:
+      interpret_subsequence_characteristics_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_FULL_FRAME_FREEZE:
+      interpret_full_frame_freeze_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_FULL_FRAME_FREEZE_RELEASE:
+      interpret_full_frame_freeze_release_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_FULL_FRAME_SNAPSHOT:
+      interpret_full_frame_snapshot_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_PROGRESSIVE_REFINEMENT_SEGMENT_START:
+      interpret_progressive_refinement_start_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_PROGRESSIVE_REFINEMENT_SEGMENT_END:
+      interpret_progressive_refinement_end_info( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_MOTION_CONSTRAINED_SLICE_GROUP_SET:
+      interpret_motion_constrained_slice_group_set_info( msg+offset, payload_size, p_Vid );
+    case  SEI_FILM_GRAIN_CHARACTERISTICS:
+      interpret_film_grain_characteristics_info ( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_DEBLOCKING_FILTER_DISPLAY_PREFERENCE:
+      interpret_deblocking_filter_display_preference_info ( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_STEREO_VIDEO_INFO:
+      interpret_stereo_video_info_info ( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_TONE_MAPPING:
+      interpret_tone_mapping( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_POST_FILTER_HINTS:
+      interpret_post_filter_hints_info ( msg+offset, payload_size, p_Vid );
+      break;
+    case  SEI_FRAME_PACKING_ARRANGEMENT:
+      interpret_frame_packing_arrangement_info( msg+offset, payload_size, p_Vid );
+      break;
+    default:
+      interpret_reserved_info( msg+offset, payload_size, p_Vid );
+      break;    
+    }
+    offset += payload_size;
+
+  } while( msg[offset] != 0x80 );    // more_rbsp_data()  msg[offset] != 0x80
+  // ignore the trailing bits rbsp_trailing_bits();
+  assert(msg[offset] == 0x80);      // this is the trailing bits
+  assert( offset+1 == size );
+}
+
+\end{lstlisting}
+
