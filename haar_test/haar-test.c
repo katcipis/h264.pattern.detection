@@ -18,8 +18,13 @@
 #define FOUND_OBJECTS_BASE_DIR "found_objects"
 
 static const int NUM_CHANNELS                = 3;
+
 static const int MIN_OBJECT_WIDTH            = 30;
 static const int MIN_OBJECT_HEIGHT           = 30;
+
+static const int MAX_OBJECT_WIDTH            = 800;
+static const int MAX_OBJECT_HEIGHT           = 800;
+
 
 
 static void save_detected_objects(IplImage * image, CvSeq* results, const gchar* objects_dir)
@@ -91,7 +96,12 @@ int main(int argc, char **argv)
   double scale_factor    = 1.1f;
   int min_neighbors      = 3;
   int haar_flags         = CV_HAAR_DO_CANNY_PRUNING; 
-  CvSize min_size;
+
+  CvSize min_size = {.width = MIN_OBJECT_WIDTH,
+                     .height = MIN_OBJECT_HEIGHT};
+
+  CvSize max_size = {.width = MAX_OBJECT_WIDTH,
+                     .height = MAX_OBJECT_HEIGHT};
  
   /* Test stuff */
   gchar * buffer                  = NULL;
@@ -132,11 +142,9 @@ int main(int argc, char **argv)
   image            = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, NUM_CHANNELS);
   gray_image       = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
 
-  min_size.width   = MIN_OBJECT_WIDTH;
-  min_size.height  = MIN_OBJECT_HEIGHT;
-
-  printf("\nStarting Haar test, width[%d] height[%d] object min size[%d][%d] scale factor[%f] min_neighbors[%d]\n\n", 
-         width, height, min_size.height, min_size.width, scale_factor, min_neighbors);
+  printf("\nStarting Haar test, width[%d] height[%d] object min size[%d][%d] max size[%d][%d]"
+         " scale factor[%f] min_neighbors[%d]\n\n", width, height, min_size.height, min_size.width,
+         max_size.height, max_size.width, scale_factor, min_neighbors);
 
   /* Luma is full resolution, 2 croma are quarter resolution each */
   image_size = width * height;
@@ -182,7 +190,8 @@ int main(int argc, char **argv)
                                     scale_factor,
                                     min_neighbors,
                                     haar_flags,
-                                    min_size);
+                                    min_size,
+                                    max_size);
 
     elapsed = g_timer_elapsed (timer, NULL);
 
