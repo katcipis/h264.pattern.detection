@@ -1,0 +1,5 @@
+
+To compile the project you will need to install opencv, on Ubuntu 12:04 you can run:
+
+sudo apt-get install libcvaux-dev libcv-dev libhighgui-dev
+
