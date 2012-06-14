@@ -10,7 +10,7 @@ CFLAGS=-O2 $(OPENCV_CFLAGS) $(GLIB_CFLAGS)
 LDFLAGS=-L. $(OPENCV_LFLAGS) $(GLIB_LFLAGS)
 
 haar-test: haar-test.c
-	$(CC) $(CFLAGS) $(LDFLAGS) $? -o $@
+	$(CC) $(CFLAGS) $? -o $@ $(LDFLAGS) 
 
 clean:
 	rm -rf haar-test *.o
