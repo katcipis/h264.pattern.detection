@@ -1,5 +1,12 @@
+This is part of my BSc thesis.
 
 To compile the project you will need to install opencv, on Ubuntu 12:04 you can run:
 
 sudo apt-get install libcvaux-dev libcv-dev libhighgui-dev
+
+To run the live example you will also need:
+
+sudo apt-get install python-gst0.10
+
+Since it uses python + gstreamer to capture live video and integrates it with the lencod.
 

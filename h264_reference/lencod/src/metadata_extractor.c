@@ -1,7 +1,6 @@
 #include "metadata_extractor.h"
 
 #include <cv.h>
-#include <cvaux.h>
 #include <highgui.h>
 #include <stdio.h>
 
@@ -42,6 +41,8 @@ struct _MetadataExtractor {
 
   /* Minimum object size */
   CvSize min_size;
+  /* Maximum object size */
+  CvSize max_size;
 
   int haar_flags;
 
@@ -86,6 +87,9 @@ MetadataExtractor * metadata_extractor_new(int min_width,
                                            int tracking_hysteresis,
                                            const char * training_file)
 {
+  /* FIXME A new opencv added this is information, i dont have time to configure/parametrize it, sorry :-( */
+  static const int max_detected_object_width  = 640;
+  static const int max_detected_object_height = 640;
 
   MetadataExtractor * extractor = malloc(sizeof(MetadataExtractor));
 
@@ -98,6 +102,8 @@ MetadataExtractor * metadata_extractor_new(int min_width,
   extractor->storage               = cvCreateMemStorage(0);
   extractor->min_size.width        = min_width; 
   extractor->min_size.height       = min_height;
+  extractor->max_size.width        = max_detected_object_width; 
+  extractor->max_size.height       = max_detected_object_height;
   extractor->search_hysteresis     = search_hysteresis;
   extractor->tracking_hysteresis   = tracking_hysteresis;
 
@@ -167,7 +173,8 @@ static CvRect* metadata_extractor_search_for_object_of_interest(MetadataExtracto
                                   extractor->scale_factor,
                                   extractor->min_neighbors,
                                   extractor->haar_flags, 
-                                  extractor->min_size);
+                                  extractor->min_size,
+                                  extractor->max_size);
 
   /* Freeing images */
   cvReleaseImage(&frame);
