@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import gobject, pygtk, gtk, pygst, sys
 pygst.require("0.10")
 import os, gst, glib, subprocess, time
@@ -29,21 +31,21 @@ def get_options ():
 def generate_encoder_configuration (frames_to_encode, frame_rate, width, height):
 
 	config_template = open (_ENCODER_TEMPLATE_FILE, "r")
-
+  
 	config_file_str = config_template.read().format(InputFile1 = _INPUT_FILE, 
-                                                InputFile2 = _INPUT_FILE, 
-                                                FramesToBeEncoded = frames_to_encode, 
-                                                FrameRate = frame_rate, 
-                                                SourceWidth = width, 
-                                                SourceHeight = height, 
-                                                OutputWidth = width, 
-                                                OutputHeight = height,
-                                                object_detection_enable = _OBJECT_DETECTION_ENABLE,
-                                                object_detection_min_width = _OBJECT_DETECTION_MIN_WIDTH,
-                                                object_detection_min_height = _OBJECT_DETECTION_MIN_HEIGHT,
-                                                object_detection_search_hysteresis = _OBJECT_DETECTION_SEARCH_HYST,
-                                                object_detection_tracking_hysteresis = _OBJECT_DETECTION_TRACKING_HYST,
-                                                object_detection_training_file = _OBJECT_DETECTION_TRAINING_FILE)
+                                                        InputFile2 = _INPUT_FILE, 
+                                                        FramesToBeEncoded = frames_to_encode, 
+                                                        FrameRate = frame_rate, 
+                                                        SourceWidth = width, 
+                                                        SourceHeight = height, 
+                                                        OutputWidth = width, 
+                                                        OutputHeight = height,
+                                                        object_detection_enable = _OBJECT_DETECTION_ENABLE,
+                                                        object_detection_min_width = _OBJECT_DETECTION_MIN_WIDTH,
+                                                        object_detection_min_height = _OBJECT_DETECTION_MIN_HEIGHT,
+                                                        object_detection_search_hysteresis = _OBJECT_DETECTION_SEARCH_HYST,
+                                                        object_detection_tracking_hysteresis = _OBJECT_DETECTION_TRACKING_HYST,
+                                                        object_detection_training_file = _OBJECT_DETECTION_TRAINING_FILE)
 
 	config_template.close()
 
@@ -58,7 +60,7 @@ def gst_bus_handler (bus, message):
         if message.type == gst.MESSAGE_ERROR:
             err, debug = message.parse_error()
             print("Error: {0}".format(debug))
-            gtk.main_quit()
+            exit()
 
         elif message.type == gst.MESSAGE_WARNING:
             err, debug = message.parse_warning()
@@ -81,7 +83,8 @@ def build_capture_pipeline(frames_to_encode, frame_rate, width, height):
         bus.enable_sync_message_emission()
         bus.connect("message", gst_bus_handler)
 
-        src   = gst.element_factory_make("v4l2src", "src")
+        #src   = gst.element_factory_make("v4l2src", "src") 
+        src   = gst.element_factory_make("videotestsrc", "src")
         colorspace = gst.element_factory_make("ffmpegcolorspace", "colorspace")
         videoscale = gst.element_factory_make("videoscale", "video-scale")
         videorate  = gst.element_factory_make("videorate", "video-rate")
