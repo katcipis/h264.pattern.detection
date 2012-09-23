@@ -10,3 +10,4 @@ sudo apt-get install python-gst0.10
 
 Since it uses python + gstreamer to capture live video and integrates it with the lencod.
 
+Then a simple "make" call should compile the entire project. (if OpenCV doesnt change its API and breaks everything :-)
