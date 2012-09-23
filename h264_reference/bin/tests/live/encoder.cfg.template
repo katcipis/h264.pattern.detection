@@ -42,7 +42,7 @@ VideoCode             = 1      # Video codes for RGB ==> YUV conversions
 TraceFile             = "trace_enc.txt"              # Trace file 
 ReconFile1            = "rec_live.yuv"  # Reconstruction YUV file
 ReconFile2            = "rec_live.yuv"  # Reconstruction YUV file 2 for the MVC profile
-OutputFile            = "live.h264"     # Bitstream
+OutputFile            = {OutputFile}     # Bitstream
 StatsFile             = "live.dat"      # Coding statistics file
 
 ##########################################################################################
