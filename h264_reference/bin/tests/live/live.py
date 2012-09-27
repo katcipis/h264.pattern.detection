@@ -101,6 +101,15 @@ def gst_bus_handler (bus, message):
             print("Message type {0}".format(message.type))
 
 
+def build_yuv_420_videoparse(width, height, frame_rate):
+    videoparse = gst.element_factory_make("videoparse", "video-caps")
+
+    videoparse.set_property("format", 1)
+    videoparse.set_property("width", int(width))
+    videoparse.set_property("height", int(height))
+    videoparse.set_property("framerate", gst.Fraction(int(frame_rate), 1))
+    return videoparse
+
 
 def build_capture_pipeline(frames_to_encode, frame_rate, width, height):
 
@@ -113,21 +122,20 @@ def build_capture_pipeline(frames_to_encode, frame_rate, width, height):
 
     #src   = gst.element_factory_make("v4l2src", "src") 
     src   = gst.element_factory_make("videotestsrc", "src")
+    src.set_property("is-live", True)
+
     colorspace = gst.element_factory_make("ffmpegcolorspace", "colorspace")
     videoscale = gst.element_factory_make("videoscale", "video-scale")
     videorate  = gst.element_factory_make("videorate", "video-rate")
-    caps       = gst.element_factory_make("capsfilter", "video-caps")
+    videoparse = build_yuv_420_videoparse(width, height, frame_rate)
     queue = gst.element_factory_make("queue", "buffer")
     sink  = gst.element_factory_make("filesink", "file-sink")
-    video_caps = "video/x-raw-yuv,format=\(fourcc\)I420,width={width},height={height},framerate={framerate}".format (width = width, 
-                                                                                                                     height = height, 
-                                                                                                                     framerate = frame_rate)
+
     sink.set_property ("location", _ENCODER_INPUT_FILE)
     src.set_property ("num-buffers", int(frames_to_encode))
-    caps.set_property("caps", gst.caps_from_string(video_caps))
 
-    pipeline.add (src, colorspace, videoscale, videorate, queue, sink)
-    gst.element_link_many(src, colorspace, videoscale, videorate, queue, sink)
+    pipeline.add (src, colorspace, videoscale, videorate, videoparse, queue, sink)
+    gst.element_link_many(src, colorspace, videoscale, videorate, videoparse, queue, sink)
 
     return pipeline
 
@@ -142,7 +150,7 @@ def build_playback_pipeline(frames_to_encode, frame_rate, width, height):
     bus.connect("message", gst_bus_handler)
 
     src   = gst.element_factory_make("filesrc", "src")
-    videoparse = gst.element_factory_make("videoparse", "videoparse")
+    videoparse = build_yuv_420_videoparse(width, height, frame_rate)
     colorspace = gst.element_factory_make("ffmpegcolorspace", "colorspace")
     videoscale = gst.element_factory_make("videoscale", "video-scale")
     videorate  = gst.element_factory_make("videorate", "video-rate")
@@ -150,11 +158,6 @@ def build_playback_pipeline(frames_to_encode, frame_rate, width, height):
     sink  = gst.element_factory_make("autovideosink", "video-sink")
 
     src.set_property ("location", _DECODER_OUTPUT_FILE)
-
-    videoparse.set_property("format", 1)
-    videoparse.set_property("width", int(width))
-    videoparse.set_property("height", int(height))
-    videoparse.set_property("framerate", gst.Fraction(int(frame_rate), 1))
 
     pipeline.add (src, videoparse, colorspace, videoscale, videorate, queue, sink)
     gst.element_link_many(src, videoparse, colorspace, videoscale, videorate, queue, sink)
