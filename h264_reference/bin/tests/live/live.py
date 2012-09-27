@@ -14,7 +14,7 @@ _ENCODER_FILE = os.path.join (os.getcwd(), "encoder.cfg")
 _DECODER_FILE = os.path.join (os.getcwd(), "decoder.cfg")
 
 _ENCODER_INPUT_FILE  = os.path.join(_TMP_FILES_DIRECTORY, "live-recorded.yuv")
-_ENCODER_OUTPUT_FILE = os.path.join(_TMP_FILES_DIRECTORY, "live-recorded.h264")
+_ENCODER_OUTPUT_FILE = os.path.join(_TMP_FILES_DIRECTORY, "live-encoded.h264")
 _DECODER_INPUT_FILE  = _ENCODER_OUTPUT_FILE
 _DECODER_OUTPUT_FILE = os.path.join(_TMP_FILES_DIRECTORY, "live-recorded-decoded.yuv")
 _DECODER_REFERENCE_FILE = _ENCODER_INPUT_FILE
