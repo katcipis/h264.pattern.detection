@@ -128,14 +128,19 @@ def build_capture_pipeline(frames_to_encode, frame_rate, width, height):
     videoscale = gst.element_factory_make("videoscale", "video-scale")
     videorate  = gst.element_factory_make("videorate", "video-rate")
     videoparse = build_yuv_420_videoparse(width, height, frame_rate)
-    queue = gst.element_factory_make("queue", "buffer")
-    sink  = gst.element_factory_make("filesink", "file-sink")
+    tee        = gst.element_factory_make("tee", "videotee")
+    tee_queue1 = gst.element_factory_make("queue", "tee-queue1")
+    tee_queue2 = gst.element_factory_make("queue", "tee-queue2")
+    filesink   = gst.element_factory_make("filesink", "file-sink")
+    videosink  = gst.element_factory_make("autovideosink", "video-sink")
 
-    sink.set_property ("location", _ENCODER_INPUT_FILE)
+    filesink.set_property ("location", _ENCODER_INPUT_FILE)
     src.set_property ("num-buffers", int(frames_to_encode))
 
-    pipeline.add (src, colorspace, videoscale, videorate, videoparse, queue, sink)
-    gst.element_link_many(src, colorspace, videoscale, videorate, videoparse, queue, sink)
+    pipeline.add (src, colorspace, videoscale, videorate, videoparse, tee_queue1, tee_queue2, tee, videosink, filesink)
+    gst.element_link_many(src, colorspace, videoscale, videorate, videoparse, tee)
+    gst.element_link_many(tee, tee_queue1, filesink)
+    gst.element_link_many(tee, tee_queue2, videosink)
 
     return pipeline
 
