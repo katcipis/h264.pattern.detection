@@ -39,11 +39,11 @@ VideoCode             = 1      # Video codes for RGB ==> YUV conversions
                                # 7 = SMPTE_260M,
                                # 8 = ITU_REC709_EXACT
 
-TraceFile             = "trace_enc.txt"              # Trace file 
-ReconFile1            = "rec_live.yuv"  # Reconstruction YUV file
-ReconFile2            = "rec_live.yuv"  # Reconstruction YUV file 2 for the MVC profile
+TraceFile             = "./tmp/trace_enc.txt"  # Trace file 
+ReconFile1            = "./tmp/rec_live.yuv"   # Reconstruction YUV file
+ReconFile2            = "./tmp/rec_live2.yuv"  # Reconstruction YUV file 2 for the MVC profile
 OutputFile            = {OutputFile}     # Bitstream
-StatsFile             = "live.dat"      # Coding statistics file
+StatsFile             = "./tmp/live.dat" # Coding statistics file
 
 ##########################################################################################
 # Object detection/tracking configuration
