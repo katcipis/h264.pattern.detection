@@ -135,9 +135,11 @@ def build_capture_pipeline(frames_to_encode, frame_rate, width, height):
     bus.enable_sync_message_emission()
     bus.connect("message", gst_bus_handler)
 
-    #src   = gst.element_factory_make("v4l2src", "src") 
-    src   = gst.element_factory_make("videotestsrc", "src")
-    src.set_property("is-live", True)
+    # The video source ( autovideosrc does not have the num-buffers property :-( ).
+    src   = gst.element_factory_make("v4l2src", "src") 
+    # TO TEST WITHOUT A WEBCAM
+    #src   = gst.element_factory_make("videotestsrc", "src")
+    #src.set_property("is-live", True)
 
     colorspace = gst.element_factory_make("ffmpegcolorspace", "colorspace")
     videoscale = gst.element_factory_make("videoscale", "video-scale")
