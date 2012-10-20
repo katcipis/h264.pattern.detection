@@ -101,6 +101,7 @@ def gst_bus_handler (bus, message):
             print("Message type {0}".format(message.type))
 
 
+
 def build_yuv_420_videoparse(width, height, frame_rate):
     videoparse = gst.element_factory_make("videoparse", "video-caps")
 
@@ -108,7 +109,21 @@ def build_yuv_420_videoparse(width, height, frame_rate):
     videoparse.set_property("width", int(width))
     videoparse.set_property("height", int(height))
     videoparse.set_property("framerate", gst.Fraction(int(frame_rate), 1))
+
     return videoparse
+
+
+
+def build_yuv_420_videocaps(width, height, frame_rate):
+    caps_str = "video/x-raw-yuv, format=(fourcc)I420, width={width}, height={height}, framerate={framerate}/1".format (width = width,
+                                                                                                                       height = height,
+                                                                                                                       framerate = frame_rate)
+    print("\n=== Recorded video caps: {0} ===\n".format(caps_str))
+    caps = gst.Caps(caps_str)
+    videocaps = gst.element_factory_make("capsfilter", "input-video-capsfilter")
+    videocaps.set_property("caps", caps)
+    return videocaps
+
 
 
 def build_capture_pipeline(frames_to_encode, frame_rate, width, height):
@@ -127,7 +142,7 @@ def build_capture_pipeline(frames_to_encode, frame_rate, width, height):
     colorspace = gst.element_factory_make("ffmpegcolorspace", "colorspace")
     videoscale = gst.element_factory_make("videoscale", "video-scale")
     videorate  = gst.element_factory_make("videorate", "video-rate")
-    videoparse = build_yuv_420_videoparse(width, height, frame_rate)
+    videocaps  = build_yuv_420_videocaps(width, height, frame_rate)
     tee        = gst.element_factory_make("tee", "videotee")
     tee_queue1 = gst.element_factory_make("queue", "tee-queue1")
     tee_queue2 = gst.element_factory_make("queue", "tee-queue2")
@@ -137,8 +152,8 @@ def build_capture_pipeline(frames_to_encode, frame_rate, width, height):
     filesink.set_property ("location", _ENCODER_INPUT_FILE)
     src.set_property ("num-buffers", int(frames_to_encode))
 
-    pipeline.add (src, colorspace, videoscale, videorate, videoparse, tee_queue1, tee_queue2, tee, videosink, filesink)
-    gst.element_link_many(src, colorspace, videoscale, videorate, videoparse, tee)
+    pipeline.add (src, colorspace, videoscale, videorate, videocaps, tee_queue1, tee_queue2, tee, videosink, filesink)
+    gst.element_link_many(src, colorspace, videoscale, videorate, videocaps, tee)
     gst.element_link_many(tee, tee_queue1, filesink)
     gst.element_link_many(tee, tee_queue2, videosink)
 
@@ -166,7 +181,6 @@ def build_playback_pipeline(frames_to_encode, frame_rate, width, height):
 
     pipeline.add (src, videoparse, colorspace, videoscale, videorate, queue, sink)
     gst.element_link_many(src, videoparse, colorspace, videoscale, videorate, queue, sink)
-
     return pipeline
 
 
@@ -181,13 +195,19 @@ capture_pipeline = build_capture_pipeline(*get_options())
 capture_pipeline.set_state (gst.STATE_PLAYING)
 
 gtk.gdk.threads_init()
+print("\n=== Starting to acquire video ===\n")
 gtk.main()
 
+print("\n=== Acquired video ===\n")
 capture_pipeline.set_state (gst.STATE_NULL)
 
+print("\n=== Encoding video with object detection metadata ===\n")
 subprocess.call (os.path.join("..", "..","lencod.exe") + " -f " + _ENCODER_FILE, shell=True)
+
+print("\n=== Decoding video with object detection metadata ===\n")
 subprocess.call (os.path.join("..", "..", "ldecod.exe") + " -f " + _DECODER_FILE, shell=True)
 
+print("\n=== Playing decoded video with metadata already applied on the video ===\n")
 play_pipeline = build_playback_pipeline(*get_options())
 play_pipeline.set_state (gst.STATE_PLAYING)
 
